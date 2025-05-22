@@ -1,0 +1,244 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Base colors */
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    
+    /* Card colors */
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    
+    /* Primary colors */
+    --primary: 221.2 83.2% 53.3%;
+    --primary-foreground: 210 40% 98%;
+    
+    /* Secondary colors */
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    
+    /* Accent colors */
+    --accent: 266 100% 64%;
+    --accent-foreground: 210 40% 98%;
+    
+    /* Status colors */
+    --success: 142.1 76.2% 36.3%;
+    --success-foreground: 355.7 100% 97.3%;
+    --warning: 32 100% 50%;
+    --warning-foreground: 210 40% 98%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    
+    /* Muted */
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    
+    /* Border */
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    
+    /* Toast */
+    --toast-bg: 0 0% 100%;
+    --toast-text: 222.2 84% 4.9%;
+    --toast-border: 214.3 31.8% 91.4%;
+    
+    /* Shadow */
+    --ring: 221.2 83.2% 53.3%;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    /* Base colors */
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    
+    /* Card colors */
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    
+    /* Primary colors */
+    --primary: 217.2 91.2% 59.8%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+    
+    /* Secondary colors */
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    
+    /* Accent colors */
+    --accent: 266 80% 60%;
+    --accent-foreground: 210 40% 98%;
+    
+    /* Status colors */
+    --success: 142.1 70.6% 45.3%;
+    --success-foreground: 144.9 80.4% 10%;
+    --warning: 35 92% 50%;
+    --warning-foreground: 35 40% 15%;
+    --destructive: 0 72.8% 50.6%;
+    --destructive-foreground: 0 85.7% 97.3%;
+    
+    /* Muted */
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    
+    /* Border */
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    
+    /* Toast */
+    --toast-bg: 222.2 84% 4.9%;
+    --toast-text: 210 40% 98%;
+    --toast-border: 217.2 32.6% 17.5%;
+    
+    /* Shadow */
+    --ring: 224.3 76.3% 48%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Inter', sans-serif;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-medium tracking-tight;
+  }
+  h1 {
+    @apply text-3xl leading-[1.2];
+  }
+  h2 {
+    @apply text-2xl leading-[1.2];
+  }
+  h3 {
+    @apply text-xl leading-[1.2];
+  }
+  p, li, div {
+    @apply leading-[1.5];
+  }
+}
+
+@layer components {
+  .sidebar-link {
+    @apply flex items-center gap-3 px-3 py-2 rounded-md transition-all duration-200 hover:bg-secondary text-muted-foreground hover:text-foreground;
+  }
+  
+  .sidebar-link.active {
+    @apply bg-secondary text-foreground font-medium;
+  }
+  
+  .form-input {
+    @apply w-full px-3 py-2 rounded-md border border-input bg-background transition-colors focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary;
+  }
+  
+  .btn {
+    @apply inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none;
+  }
+  
+  .btn-primary {
+    @apply bg-primary text-primary-foreground hover:bg-primary/90;
+  }
+  
+  .btn-secondary {
+    @apply bg-secondary text-secondary-foreground hover:bg-secondary/80;
+  }
+  
+  .btn-accent {
+    @apply bg-accent text-accent-foreground hover:bg-accent/90;
+  }
+  
+  .btn-destructive {
+    @apply bg-destructive text-destructive-foreground hover:bg-destructive/90;
+  }
+  
+  .btn-outline {
+    @apply border border-input bg-background hover:bg-secondary hover:text-secondary-foreground;
+  }
+  
+  .btn-ghost {
+    @apply hover:bg-secondary hover:text-secondary-foreground;
+  }
+  
+  .btn-sm {
+    @apply h-9 px-3 rounded-md;
+  }
+  
+  .btn-md {
+    @apply h-10 py-2 px-4 rounded-md;
+  }
+  
+  .btn-lg {
+    @apply h-11 px-8 rounded-md;
+  }
+  
+  .badge {
+    @apply inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2;
+  }
+  
+  .badge-primary {
+    @apply bg-primary text-primary-foreground hover:bg-primary/80 border-transparent;
+  }
+  
+  .badge-secondary {
+    @apply bg-secondary text-secondary-foreground hover:bg-secondary/80;
+  }
+  
+  .badge-success {
+    @apply bg-success text-success-foreground hover:bg-success/80 border-transparent;
+  }
+  
+  .badge-warning {
+    @apply bg-warning text-warning-foreground hover:bg-warning/80 border-transparent;
+  }
+  
+  .badge-destructive {
+    @apply bg-destructive text-destructive-foreground hover:bg-destructive/80 border-transparent;
+  }
+  
+  .badge-outline {
+    @apply text-foreground border-border bg-transparent hover:bg-secondary;
+  }
+  
+  .card {
+    @apply rounded-lg border bg-card text-card-foreground shadow-sm;
+  }
+  
+  .card-header {
+    @apply flex flex-col space-y-1.5 p-6;
+  }
+  
+  .card-title {
+    @apply text-2xl font-semibold leading-none tracking-tight;
+  }
+  
+  .card-description {
+    @apply text-sm text-muted-foreground;
+  }
+  
+  .card-content {
+    @apply p-6 pt-0;
+  }
+  
+  .card-footer {
+    @apply flex items-center p-6 pt-0;
+  }
+
+  /* Status badges */
+  .status-pending {
+    @apply bg-warning/20 border-warning/50 text-warning-foreground;
+  }
+  
+  .status-approved {
+    @apply bg-success/20 border-success/50 text-success-foreground;
+  }
+  
+  .status-rejected {
+    @apply bg-destructive/20 border-destructive/50 text-destructive-foreground;
+  }
+}
