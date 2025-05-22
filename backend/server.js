@@ -1,11 +1,11 @@
-import express from "express";
-import multer from "multer";
-import { exec } from "child_process";
-import fs from "fs";
-import path from "path";
-import cors from "cors";
+const express = require("express");
+const multer = require("multer");
+const { exec } = require("child_process");
+const fs = require("fs");
+const path = require("path");
+const cors = require("cors");
 
-const app = express();
+const app = express(); 
 const upload = multer({ dest: "uploads/" });
 
 app.use(cors());
@@ -27,7 +27,6 @@ app.post("/convert-docx", upload.single("docx"), (req, res) => {
     }
 
     res.download(outputPdfPath, "Generated_Syllabus.pdf", (err) => {
-      // Cleanup files
       fs.unlinkSync(filePath);
       fs.unlinkSync(outputPdfPath);
     });
