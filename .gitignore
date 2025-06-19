@@ -1,0 +1,11 @@
+.next/
+dist/
+build/
+node_modules/
+/backend/.env
+/backend/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.DS_Store
+Thumbs.db
