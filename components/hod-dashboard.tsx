@@ -93,7 +93,7 @@ export default function HODDashboard({ user }: HODDashboardProps) {
   
   const fetchSubjects = async () => {
     try {
-      const res = await fetch("http://localhost:5000/api/auth/get-subjects");
+      const res = await fetch(`http://localhost:5000/api/auth/get-subjects?createdBy=${user._id}`);
       const data = await res.json();
       setSubjects(data);
       console.log("📦 Subjects fetched:", data);
