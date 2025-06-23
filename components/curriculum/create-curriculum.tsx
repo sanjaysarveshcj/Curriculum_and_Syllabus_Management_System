@@ -711,9 +711,11 @@ const CreateCurriculum: React.FC = () => {
 
   const handleManualUpload = async () => {
     if (!manualUploadFile) return toast.error("📂 Select a DOCX file first");
-    if (!formFields.regulation || !formFields.branchName) {
-      return toast.error("❗ Please fill in regulation and branch name");
+    if (!formFields.regulation.trim() || !formFields.branchName.trim()) {
+      toast.error("Please fill in both Regulation and Department before uploading.");
+      return;
     }
+
 
     setIsUploading(true);
 
@@ -1006,8 +1008,31 @@ const CreateCurriculum: React.FC = () => {
           </div>
         </div>
       </div>
+
       <div className="p-6 border rounded-md bg-white dark:bg-gray-800 shadow-sm">
         <h2 className="text-xl font-semibold text-purple-600">Send Curriculum to Superuser</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Regulation</label>
+              <input
+                type="text"
+                value={formFields.regulation}
+                onChange={(e) => setFormFields((prev) => ({ ...prev, regulation: e.target.value }))}
+                className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
+                placeholder="E.g., R26"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Department</label>
+              <input
+                type="text"
+                value={formFields.branchName}
+                onChange={(e) => setFormFields((prev) => ({ ...prev, branchName: e.target.value }))}
+                className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
+                placeholder="E.g., CSE"
+              />
+            </div>
+          </div>
         <input
           type="file"
           accept=".docx"

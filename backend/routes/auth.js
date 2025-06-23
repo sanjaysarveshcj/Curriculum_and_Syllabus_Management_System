@@ -505,6 +505,7 @@ router.get("/regulations", async (req, res) => {
       const code = curr.regulationCode;
       if (!acc[code]) acc[code] = [];
       acc[code].push({
+        version:curr.version,
         department: curr.department,
         hod: curr.hod.name,
         curriculumUrl: curr.curriculumUrl,
@@ -571,37 +572,78 @@ router.put("/departments/:id", async (req, res) => {
   }
 });
 
+// router.put("/upload-curriculum", async (req, res) => {
+//   try {
+//     const { regulationCode, department, fileId } = req.body;
+
+//     console.log(req.body);
+
+//     if (!regulationCode || !department || !fileId) {
+//       return res.status(400).json({ error: "Missing regulation or department or file" });
+//     }
+
+//     // Update regulation record
+//     const updated = await Regulation.findOneAndUpdate(
+//       { regulationCode, department },
+//       {
+//         curriculumUrl: fileId,
+//         status: "Submitted",
+//         lastUpdated: new Date(),
+//       },
+//       { new: true }
+//     );
+
+//     if (!updated) {
+//       return res.status(404).json({ error: "Regulation entry not found" });
+//     }
+
+//     res.status(200).json({
+//       message: "Curriculum uploaded and regulation updated",
+//       regulation: updated, // Return the updated regulation instead of req.file.id
+//     });
+//   } catch (err) {
+//     console.error("Update error:", err);
+//     res.status(500).json({ error: "Internal server error" });
+//   }
+// });
+
 router.put("/upload-curriculum", async (req, res) => {
   try {
     const { regulationCode, department, fileId } = req.body;
-
-    console.log(req.body);
 
     if (!regulationCode || !department || !fileId) {
       return res.status(400).json({ error: "Missing regulation or department or file" });
     }
 
-    // Update regulation record
-    const updated = await Regulation.findOneAndUpdate(
-      { regulationCode, department },
-      {
-        curriculumUrl: fileId,
-        status: "Submitted",
-        lastUpdated: new Date(),
-      },
-      { new: true }
-    );
+    // Step 1: Find the most recent version (if any) for the given regulationCode and department
+    const latest = await Regulation.findOne({ regulationCode, department })
+      .sort({ version: -1 }); // Get highest version
 
-    if (!updated) {
+    if (!latest) {
       return res.status(404).json({ error: "Regulation entry not found" });
     }
 
+    // Step 2: Prepare new version number
+    const newVersion = (latest.version || 0) + 1;
+
+    // Step 3: Create new document with updated curriculumUrl and incremented version
+    const newRegulation = new Regulation({
+      ...latest.toObject(),      // Clone all fields
+      _id: undefined,            // Allow MongoDB to generate new _id
+      curriculumUrl: fileId,     // Update curriculum URL
+      version: newVersion,       // Increment version
+      status: "Submitted",
+      lastUpdated: new Date()
+    });
+
+    await newRegulation.save();
+
     res.status(200).json({
-      message: "Curriculum uploaded and regulation updated",
-      regulation: updated, // Return the updated regulation instead of req.file.id
+      message: `New regulation entry created with version ${newVersion}`,
+      regulation: newRegulation,
     });
   } catch (err) {
-    console.error("Update error:", err);
+    console.error("Error creating new regulation version:", err);
     res.status(500).json({ error: "Internal server error" });
   }
 });

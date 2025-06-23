@@ -14,6 +14,98 @@ import { Plus, Building, FileText, Users, TrendingUp, Download } from "lucide-re
 import DashboardLayout from "./dashboard-layout"
 import { toast } from "sonner"
 
+interface CurriculumRowProps {
+  deptVersions: DepartmentItem[];
+}
+
+export const CurriculumRow = ({ deptVersions }: CurriculumRowProps) => {
+  const department = deptVersions[0].department
+  const hod = deptVersions[0].hod
+  const [selectedVersion, setSelectedVersion] = useState<DepartmentItem | null>(() => {
+    return (
+      deptVersions
+        .slice()
+        .sort((a, b) => (b.version ?? 0) - (a.version ?? 0))[0] || null
+    );
+  });
+
+  return (
+    <tr className="border-t hover:bg-muted/50">
+      <td className="p-2">{department}</td>
+      <td className="p-2">{hod}</td>
+      <td className="p-2">
+        <Badge
+          className={
+            deptVersions.some((v) => v.curriculumUrl)
+              ? "bg-green-100 text-green-800"
+              : "bg-yellow-100 text-yellow-800"
+          }
+        >
+          {deptVersions.some((v) => v.curriculumUrl) ? "Submitted" : "Pending"}
+        </Badge>
+      </td>
+      <td className="p-2">
+        {deptVersions
+          .map((v) => v.lastUpdated)
+          .filter(Boolean)
+          .sort()
+          .reverse()[0]
+          ? new Date(
+              deptVersions
+                .map((v) => v.lastUpdated)
+                .filter(Boolean)
+                .sort()
+                .reverse()[0]!
+            ).toLocaleString()
+          : "—"}
+      </td>
+      <td className="p-2 flex items-center gap-2">
+        <Select
+          value={String(selectedVersion?.version ?? "")}
+          onValueChange={(val) => {
+            const version = deptVersions.find((v) => String(v.version ?? 0) === val);
+            setSelectedVersion(version || null);
+          }}
+        >
+          <SelectTrigger className="w-[120px]">
+            <SelectValue placeholder="Select version" />
+          </SelectTrigger>
+          <SelectContent>
+            {deptVersions
+              .sort((a, b) => (b.version ?? 0) - (a.version ?? 0))
+              .map((v, idx) => (
+                <SelectItem key={v._id || idx} value={String(v.version ?? 0)}>
+                  Version {v.version ?? "N/A"}
+                </SelectItem>
+              ))}
+          </SelectContent>
+        </Select>
+
+        {selectedVersion ? (
+          selectedVersion.curriculumUrl ? (
+            <a
+              href={`http://localhost:5000/api/auth/file/${selectedVersion.curriculumUrl}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              download
+            >
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-purple-700 border-purple-500 hover:bg-purple-50"
+              >
+                <Download className="w-4 h-4 mr-1" />
+                Download
+              </Button>
+            </a>
+          ) : (
+            <span className="text-xs text-muted-foreground">No file</span>
+          )
+        ) : null}
+      </td>
+    </tr>
+  )
+}
 
 interface User {
   _id: string
@@ -31,6 +123,9 @@ interface DepartmentItem {
   hod: string;
   curriculumUrl?: string;
   lastUpdated?: string;
+  version?: number;
+  _id?: string;
+
 }
 
 export default function AdminDashboard({ user }: AdminDashboardProps) {
@@ -59,6 +154,7 @@ export default function AdminDashboard({ user }: AdminDashboardProps) {
     const fetchRegulations = async () => {
       const res = await fetch("http://localhost:5000/api/auth/regulations");
       const data = await res.json();
+      console.log(data)
       setRegulations(data);
     };
     fetchRegulations();
@@ -601,50 +697,25 @@ export default function AdminDashboard({ user }: AdminDashboardProps) {
                         </tr>
                       </thead>
                       <tbody>
-                        {Array.isArray(regulations[selectedRegulation]) &&
-                          regulations[selectedRegulation].map((item, index) => (
-                            <tr key={index} className="border-t hover:bg-muted/50">
-                              <td className="p-2">{item.department}</td>
-                              <td className="p-2">{item.hod}</td>
-                              <td className="p-2">
-                                <Badge
-                                  className={
-                                    item.curriculumUrl
-                                      ? "bg-green-100 text-green-800"
-                                      : "bg-yellow-100 text-yellow-800"
-                                  }
-                                >
-                                  {item.curriculumUrl ? "Submitted" : "Pending"}
-                                </Badge>
-                              </td>
-                              <td className="p-2">
-                                {item.lastUpdated
-                                  ? new Date(item.lastUpdated).toLocaleString()
-                                  : "—"}
-                              </td>
-                              <td className="p-2">
-                                {item.curriculumUrl ? (
-                                  <a
-                                    href={`http://localhost:5000/api/auth/file/${item.curriculumUrl}`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    download
-                                  >
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      className="text-purple-700 border-purple-500 hover:bg-purple-50"
-                                    >
-                                      Download
-                                    </Button>
-                                  </a>
-                                ) : (
-                                  "—"
-                                )}
-                              </td>
-                            </tr>
-                          ))}
+                        {Array.isArray(regulations[selectedRegulation]) && (() => {
+                          const grouped = regulations[selectedRegulation].reduce(
+                            (acc: Record<string, DepartmentItem[]>, item) => {
+                              const key = item.department;
+                              if (!acc[key]) acc[key] = [];
+                              acc[key].push(item);
+                              return acc;
+                            },
+                            {}
+                          );
+
+                          return Object.values(grouped).map((deptVersions, index) => (
+                            <CurriculumRow key={index} deptVersions={deptVersions} />
+                          ));
+                        })()}
                       </tbody>
+
+
+
                     </table>
                   </div>
                 </CardContent>
