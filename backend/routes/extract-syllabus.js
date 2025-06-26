@@ -51,9 +51,12 @@ rules:
 1)for practical exercise map the content under them until the section next header arrives .
 2)the content may not be structure, while passing as json make them structured ,like if it as mutiple point add bulltin or numbering to them.
 3)in the subject field pass the course code while passing the json.
-4) while passing as JSON,separate content in course objectives, text books, references, web resources, list of softwares, e-book to separate lines, each new line should start with a number followed by a dot and a space.
+4) while passing as JSON,separate content in course objectives, text books, references, web resources, list of softwares, e-book to separate lines, each new line should start with a number followed by a dot and a space.and give one line space for each new point
 5)if the content is not present in the syllabus, pass it as empty string in json. Don't pass null or undefined. 
-
+6)practical exercise and coding exercise are not same , so dont treat them as same.
+7)while passing as json structure every field properly if they are unstructure except for unit contents.
+8)dont map coding exercise to practical exercises.
+9)for the unit contents take everything under them until next header comes , it may also as coding exercises,assignments so map them as unit content.onlymap the content under the unit's content .
 TEXT:
 ${rawText}
 `;
@@ -64,7 +67,7 @@ ${rawText}
     // Extract only JSON part using RegExp
     const match = fullResponse.match(/\{[\s\S]*?\}/);
     console.log(fullResponse);
-    if (!match) throw new Error('Failed to extract valid JSON from Gemini output');
+    if (!match) throw new Error('Failed to extract valid JSON from  output');
 
     const parsed = JSON.parse(match[0]);
     res.status(200).json(parsed);

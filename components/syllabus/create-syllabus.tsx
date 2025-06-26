@@ -1288,3 +1288,4 @@ const CreateSyllabus = () => {
 };
 
 export default CreateSyllabus;
+

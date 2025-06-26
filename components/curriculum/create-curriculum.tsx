@@ -1,3 +1,5 @@
+
+
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '../../components/ui/button';
@@ -26,6 +28,7 @@ interface Course {
   sno: string;
   courseTitle: string;
   semester: string;
+  syllabusUrl?: string;
   l: string;
   t: string;
   p: string;
@@ -58,6 +61,16 @@ interface ElectiveColumn {
   cells: ElectiveCell[];
 }
 
+interface OpenElectiveTable {
+  name: string;
+  courses: Course[];
+}
+
+interface MandatoryCourseTable {
+  name: string;
+  courses: Course[];
+}
+
 interface FormFields {
   degree: string;
   branchName: string;
@@ -88,6 +101,8 @@ interface FormFields {
   semester7Courses: SemesterCourse[];
   semester8Courses: SemesterCourse[];
   professionalElectives: ElectiveColumn[];
+  openElectiveTables: OpenElectiveTable[];
+  mandatoryCourseTables: MandatoryCourseTable[];
 }
 
 const CATEGORIES = [
@@ -286,6 +301,29 @@ const CreateCurriculum: React.FC = () => {
   const [activeSection, setActiveSection] = useState<string>('basic');
   const [manualUploadFile, setManualUploadFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [courseCounts, setCourseCounts] = useState({
+    hsmc: 1,
+    bsc: 1,
+    esc: 1,
+    pcc: 1,
+    pec: 1,
+    oec: 1,
+    eec: 1,
+    mc: 1,
+    semester1: 1,
+    semester2: 1,
+    semester3: 1,
+    semester4: 1,
+    semester5: 1,
+    semester6: 1,
+    semester7: 1,
+    semester8: 1,
+    openElective1: 1,
+    openElective2: 1,
+    mandatoryCourse1: 1,
+    mandatoryCourse2: 1,
+  });
+
   const [formFields, setFormFields] = useState<FormFields>({
     degree: '',
     branchName: '',
@@ -322,62 +360,61 @@ const CreateCurriculum: React.FC = () => {
         cells: [{ courseCode: '', courseTitle: '', syllabusUrl: '', syllabusFile: undefined }],
       },
     ],
+    openElectiveTables: [
+      { name: 'Open Electives - I', courses: [{ sno: '1', courseTitle: '', semester: '', l: '', t: '', p: '', c: '' }] },
+      { name: 'Open Electives - II', courses: [{ sno: '1', courseTitle: '', semester: '', l: '', t: '', p: '', c: '' }] },
+    ],
+    mandatoryCourseTables: [
+      { name: 'Mandatory Course - I', courses: [{ sno: '1', courseTitle: '', semester: '', l: '', t: '', p: '', c: '' }] },
+      { name: 'Mandatory Course - II', courses: [{ sno: '1', courseTitle: '', semester: '', l: '', t: '', p: '', c: '' }] },
+    ],
   });
 
   useEffect(() => {
     const fetchSubjects = async () => {
-  try {
-    const token = localStorage.getItem("token");
-    const res = await fetch("http://localhost:5000/api/auth/subjects", {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    const data = await res.json();
-    setAllSubjects(data);
-  } catch (err) {
-    console.error("Error fetching subjects:", err);
-  }
-};
-
-
+      try {
+        const token = localStorage.getItem("token");
+        const res = await fetch("http://localhost:5000/api/auth/subjects", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        const data = await res.json();
+        setAllSubjects(data);
+      } catch (err) {
+        console.error("Error fetching subjects:", err);
+      }
+    };
     fetchSubjects();
   }, []);
-
-  const [courseCounts, setCourseCounts] = useState({
-    hsmc: 1,
-    bsc: 1,
-    esc: 1,
-    pcc: 1,
-    pec: 1,
-    oec: 1,
-    eec: 1,
-    mc: 1,
-    semester1: 1,
-    semester2: 1,
-    semester3: 1,
-    semester4: 1,
-    semester5: 1,
-    semester6: 1,
-    semester7: 1,
-    semester8: 1,
-  });
 
   const handleCourseCountChange = (key: keyof typeof courseCounts, value: number) => {
     if (value < 1) return;
     setCourseCounts((prev) => ({ ...prev, [key]: value }));
 
     setFormFields((prev) => {
-      const fieldKey = key.startsWith('semester') ? `${key}Courses` : `${key}Courses`;
-      const currentCourses = prev[fieldKey as keyof FormFields] as (Course | SemesterCourse)[];
-      const newCourses = Array.from({ length: value }, (_, i) =>
-        currentCourses[i] ||
-        (key.startsWith('semester')
-          ? { sno: String(i + 1), type: '', courseCode: '', courseTitle: '', syllabusUrl: '', syllabusFile: undefined, l: '', t: '', p: '', c: '' }
-          : { sno: String(i + 1), courseTitle: '', semester: '', l: '', t: '', p: '', c: '' })
-      );
-      return { ...prev, [fieldKey]: newCourses };
+      const fieldKey = key.startsWith('semester') ? `${key}Courses` : 
+                      key.startsWith('openElective') ? 'openElectiveTables' :
+                      key.startsWith('mandatoryCourse') ? 'mandatoryCourseTables' :
+                      `${key}Courses`;
+      if (key.startsWith('openElective') || key.startsWith('mandatoryCourse')) {
+        const tableIndex = key === 'openElective1' ? 0 : key === 'openElective2' ? 1 : key === 'mandatoryCourse1' ? 0 : 1;
+        const tables = [...(prev[fieldKey as keyof FormFields] as (OpenElectiveTable | MandatoryCourseTable)[])];
+        const newCourses = Array.from({ length: value }, (_, i) =>
+          tables[tableIndex].courses[i] || { sno: String(i + 1), courseTitle: '', semester: '', l: '', t: '', p: '', c: '' }
+        );
+        tables[tableIndex] = { ...tables[tableIndex], courses: newCourses };
+        return { ...prev, [fieldKey]: tables };
+      } else {
+        const currentCourses = prev[fieldKey as keyof FormFields] as (Course | SemesterCourse)[];
+        const newCourses = Array.from({ length: value }, (_, i) =>
+          currentCourses[i] ||
+          (key.startsWith('semester')
+            ? { sno: String(i + 1), type: '', courseCode: '', courseTitle: '', syllabusUrl: '', syllabusFile: undefined, l: '', t: '', p: '', c: '' }
+            : { sno: String(i + 1), courseTitle: '', semester: '', l: '', t: '', p: '', c: '' })
+        );
+        return { ...prev, [fieldKey]: newCourses };
+      }
     });
   };
 
@@ -388,20 +425,45 @@ const CreateCurriculum: React.FC = () => {
     value: any
   ) => {
     setFormFields((prev) => {
-      const fieldKey = key.startsWith('semester') ? `${key}Courses` : `${key}Courses`;
-      const courses = [...(prev[fieldKey as keyof FormFields] as (Course | SemesterCourse)[])];
-      courses[index] = { ...courses[index], [field]: value };
-      return { ...prev, [fieldKey]: courses };
+      const fieldKey = key.startsWith('semester') ? `${key}Courses` : 
+                      key.startsWith('openElective') ? 'openElectiveTables' :
+                      key.startsWith('mandatoryCourse') ? 'mandatoryCourseTables' :
+                      `${key}Courses`;
+      if (key.startsWith('openElective') || key.startsWith('mandatoryCourse')) {
+        const tableIndex = key === 'openElective1' ? 0 : key === 'openElective2' ? 1 : key === 'mandatoryCourse1' ? 0 : 1;
+        const tables = [...(prev[fieldKey as keyof FormFields] as (OpenElectiveTable | MandatoryCourseTable)[])];
+        const courses = [...tables[tableIndex].courses];
+        courses[index] = { ...courses[index], [field]: value };
+        tables[tableIndex] = { ...tables[tableIndex], courses };
+        return { ...prev, [fieldKey]: tables };
+      } else {
+        const courses = [...(prev[fieldKey as keyof FormFields] as (Course | SemesterCourse)[])];
+        courses[index] = { ...courses[index], [field]: value };
+        return { ...prev, [fieldKey]: courses };
+      }
     });
   };
 
   const handleRemoveCourse = (key: keyof typeof courseCounts, index: number) => {
     setFormFields((prev) => {
-      const fieldKey = key.startsWith('semester') ? `${key}Courses` : `${key}Courses`;
-      const newCourses = [...(prev[fieldKey as keyof FormFields] as (Course | SemesterCourse)[])];
-      newCourses.splice(index, 1);
-      newCourses.forEach((c, i) => (c.sno = String(i + 1)));
-      return { ...prev, [fieldKey]: newCourses };
+      const fieldKey = key.startsWith('semester') ? `${key}Courses` : 
+                      key.startsWith('openElective') ? 'openElectiveTables' :
+                      key.startsWith('mandatoryCourse') ? 'mandatoryCourseTables' :
+                      `${key}Courses`;
+      if (key.startsWith('openElective') || key.startsWith('mandatoryCourse')) {
+        const tableIndex = key === 'openElective1' ? 0 : key === 'openElective2' ? 1 : key === 'mandatoryCourse1' ? 0 : 1;
+        const tables = [...(prev[fieldKey as keyof FormFields] as (OpenElectiveTable | MandatoryCourseTable)[])];
+        const newCourses = [...tables[tableIndex].courses];
+        newCourses.splice(index, 1);
+        newCourses.forEach((c, i) => (c.sno = String(i + 1)));
+        tables[tableIndex] = { ...tables[tableIndex], courses: newCourses };
+        return { ...prev, [fieldKey]: tables };
+      } else {
+        const newCourses = [...(prev[fieldKey as keyof FormFields] as (Course | SemesterCourse)[])];
+        newCourses.splice(index, 1);
+        newCourses.forEach((c, i) => (c.sno = String(i + 1)));
+        return { ...prev, [fieldKey]: newCourses };
+      }
     });
     setCourseCounts((prev) => ({ ...prev, [key]: prev[key] - 1 }));
   };
@@ -435,7 +497,7 @@ const CreateCurriculum: React.FC = () => {
         {
           verticalNumber: `Vertical ${toRoman(prev.professionalElectives.length + 1)}`,
           verticalName: '',
-          cells: Array(formFields.professionalElectives[0].cells.length).fill({ courseCode: '', courseTitle: '', syllabusUrl: '', syllabusFile: undefined }),
+          cells: Array(prev.professionalElectives[0].cells.length).fill({ courseCode: '', courseTitle: '', syllabusUrl: '', syllabusFile: undefined }),
         },
       ],
     }));
@@ -544,10 +606,36 @@ const CreateCurriculum: React.FC = () => {
       })),
     }));
 
+    fields.openElectiveTables.forEach((table, index) => {
+      transformed[`OPEN_ELECTIVE_${index + 1}`] = table.courses.map((c) => ({
+        SNO: c.sno || ' ',
+        COURSE_TITLE: c.courseTitle || ' ',
+        SEM: c.semester || ' ',
+        L: c.l || '0',
+        T: c.t || '0',
+        P: c.p || '0',
+        C: c.c || '0',
+      }));
+      transformed[`OPEN_ELECTIVE_${index + 1}_TOT`] = String(calculateTotalCredits(table.courses));
+    });
+
+    fields.mandatoryCourseTables.forEach((table, index) => {
+      transformed[`MANDATORY_COURSE_${index + 1}`] = table.courses.map((c) => ({
+        SNO: c.sno || ' ',
+        COURSE_TITLE: c.courseTitle || ' ',
+        SEM: c.semester || ' ',
+        L: c.l || '0',
+        T: c.t || '0',
+        P: c.p || '0',
+        C: c.c || '0',
+      }));
+      transformed[`MANDATORY_COURSE_${index + 1}_TOT`] = String(calculateTotalCredits(table.courses));
+    });
+
     return transformed;
   };
 
- const handleGeneratePDF = async () => {
+  const handleGeneratePDF = async () => {
   setIsGenerating(true);
   try {
     const data = transformFormFields(formFields);
@@ -628,11 +716,10 @@ const CreateCurriculum: React.FC = () => {
 
     const electivesTable = new Table({
       width: { size: 100, type: WidthType.PERCENTAGE },
-      layout: 'fixed',
       rows: [headerRow, ...dataRows],
     });
 
-    const heading = new Paragraph({
+    const headingA = new Paragraph({
       alignment: AlignmentType.CENTER,
       children: [
         new TextRun({
@@ -644,7 +731,7 @@ const CreateCurriculum: React.FC = () => {
       ],
     });
 
-    const note = new Paragraph({
+    const noteA = new Paragraph({
       spacing: { before: 400, after: 200 },
       children: [
         new TextRun({
@@ -656,8 +743,180 @@ const CreateCurriculum: React.FC = () => {
       ],
     });
 
+    const openElectiveTables = formFields.openElectiveTables.map((table, index) => {
+      const rows = table.courses.map(c =>
+        new TableRow({
+          height: { value: 0, rule: HeightRule.AUTO },
+          children: [
+            new TableCell({
+              width: { size: 720, type: WidthType.DXA },
+              children: [new Paragraph({ children: [new TextRun({ text: c.sno, font: 'Cambria', size: 22 })] })],
+            }),
+            new TableCell({
+              width: { size: 4320, type: WidthType.DXA },
+              children: [new Paragraph({ children: [new TextRun({ text: c.courseTitle, font: 'Cambria', size: 22 })] })],
+            }),
+            new TableCell({
+              width: { size: 720, type: WidthType.DXA },
+              children: [new Paragraph({ children: [new TextRun({ text: c.semester, font: 'Cambria', size: 22 })] })],
+            }),
+            new TableCell({
+              width: { size: 720, type: WidthType.DXA },
+              children: [new Paragraph({ children: [new TextRun({ text: c.l, font: 'Cambria', size: 22 })] })],
+            }),
+            new TableCell({
+              width: { size: 720, type: WidthType.DXA },
+              children: [new Paragraph({ children: [new TextRun({ text: c.t, font: 'Cambria', size: 22 })] })],
+            }),
+            new TableCell({
+              width: { size: 720, type: WidthType.DXA },
+              children: [new Paragraph({ children: [new TextRun({ text: c.p, font: 'Cambria', size: 22 })] })],
+            }),
+            new TableCell({
+              width: { size: 720, type: WidthType.DXA },
+              children: [new Paragraph({ children: [new TextRun({ text: c.c, font: 'Cambria', size: 22 })] })],
+            }),
+          ],
+        })
+      );
+      const header = new TableRow({
+        height: { value: 0, rule: HeightRule.AUTO },
+        children: [
+          new TableCell({ width: { size: 720, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: 'S.No.', bold: true, font: 'Cambria', size: 22 })] })] }),
+          new TableCell({ width: { size: 4320, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: 'Course Title', bold: true, font: 'Cambria', size: 22 })] })] }),
+          new TableCell({ width: { size: 720, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: 'Semester', bold: true, font: 'Cambria', size: 22 })] })] }),
+          new TableCell({ width: { size: 720, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: 'L', bold: true, font: 'Cambria', size: 22 })] })] }),
+          new TableCell({ width: { size: 720, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: 'T', bold: true, font: 'Cambria', size: 22 })] })] }),
+          new TableCell({ width: { size: 720, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: 'P', bold: true, font: 'Cambria', size: 22 })] })] }),
+          new TableCell({ width: { size: 720, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: 'C', bold: true, font: 'Cambria', size: 22 })] })] }),
+        ],
+      });
+     const totalRow = new TableRow({
+  height: { value: 0, rule: HeightRule.AUTO },
+  children: [
+    new TableCell({
+      width: { size: 5040, type: WidthType.DXA },
+      children: [new Paragraph({ children: [new TextRun({ text: 'Total Credits', bold: true, font: 'Cambria', size: 22 })] })],
+    }),
+    new TableCell({
+      width: { size: 720, type: WidthType.DXA },
+      children: [new Paragraph({ children: [new TextRun({ text: String(calculateTotalCredits(table.courses)), font: 'Cambria', size: 22 })] })],
+    }),
+  ],
+});
+      return new Table({
+        width: { size: 100, type: WidthType.PERCENTAGE },
+        rows: [header, ...rows, totalRow],
+      });
+    });
+
+    const mandatoryCourseTables = formFields.mandatoryCourseTables.map((table, index) => {
+      const rows = table.courses.map(c =>
+        new TableRow({
+          height: { value: 0, rule: HeightRule.AUTO },
+          children: [
+            new TableCell({
+              width: { size: 720, type: WidthType.DXA },
+              children: [new Paragraph({ children: [new TextRun({ text: c.sno, font: 'Cambria', size: 22 })] })],
+            }),
+            new TableCell({
+              width: { size: 4320, type: WidthType.DXA },
+              children: [new Paragraph({ children: [new TextRun({ text: c.courseTitle, font: 'Cambria', size: 22 })] })],
+            }),
+            new TableCell({
+              width: { size: 720, type: WidthType.DXA },
+              children: [new Paragraph({ children: [new TextRun({ text: c.semester, font: 'Cambria', size: 22 })] })],
+            }),
+            new TableCell({
+              width: { size: 720, type: WidthType.DXA },
+              children: [new Paragraph({ children: [new TextRun({ text: c.l, font: 'Cambria', size: 22 })] })],
+            }),
+            new TableCell({
+              width: { size: 720, type: WidthType.DXA },
+              children: [new Paragraph({ children: [new TextRun({ text: c.t, font: 'Cambria', size: 22 })] })],
+            }),
+            new TableCell({
+              width: { size: 720, type: WidthType.DXA },
+              children: [new Paragraph({ children: [new TextRun({ text: c.p, font: 'Cambria', size: 22 })] })],
+            }),
+            new TableCell({
+              width: { size: 720, type: WidthType.DXA },
+              children: [new Paragraph({ children: [new TextRun({ text: c.c, font: 'Cambria', size: 22 })] })],
+            }),
+          ],
+        })
+      );
+      const header = new TableRow({
+        height: { value: 0, rule: HeightRule.AUTO },
+        children: [
+          new TableCell({ width: { size: 720, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: 'S.No.', bold: true, font: 'Cambria', size: 22 })] })] }),
+          new TableCell({ width: { size: 4320, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: 'Course Title', bold: true, font: 'Cambria', size: 22 })] })] }),
+          new TableCell({ width: { size: 720, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: 'Semester', bold: true, font: 'Cambria', size: 22 })] })] }),
+          new TableCell({ width: { size: 720, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: 'L', bold: true, font: 'Cambria', size: 22 })] })] }),
+          new TableCell({ width: { size: 720, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: 'T', bold: true, font: 'Cambria', size: 22 })] })] }),
+          new TableCell({ width: { size: 720, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: 'P', bold: true, font: 'Cambria', size: 22 })] })] }),
+          new TableCell({ width: { size: 720, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: 'C', bold: true, font: 'Cambria', size: 22 })] })] }),
+        ],
+      });
+ const totalRow = new TableRow({
+      height: { value: 0, rule: HeightRule.AUTO },
+      children: [
+        new TableCell({
+          width: { size: 5040, type: WidthType.DXA },
+          children: [new Paragraph({ children: [new TextRun({ text: 'Total Credits', bold: true, font: 'Cambria', size: 22 })] })],
+        }),
+        new TableCell({
+          width: { size: 720, type: WidthType.DXA },
+          children: [new Paragraph({ children: [new TextRun({ text: String(calculateTotalCredits(table.courses)), font: 'Cambria', size: 22 })] })],
+        }),
+      ],
+    });
+      return new Table({
+        width: { size: 100, type: WidthType.PERCENTAGE },
+        rows: [header, ...rows, totalRow],
+      });
+    });
+
     const electivesDoc = new Document({
-      sections: [{ children: [heading, electivesTable, note] }],
+      sections: [{
+        children: [
+          headingA,
+          electivesTable,
+          noteA,
+          new Paragraph({
+            alignment: AlignmentType.CENTER,
+            children: [
+              new TextRun({
+                text: 'APPENDIX B: OPEN ELECTIVES',
+                bold: true,
+                font: 'Cambria',
+                size: 22,
+              }),
+            ],
+          }),
+          ...openElectiveTables.map((table, index) => [
+            new Paragraph({ alignment: AlignmentType.LEFT, children: [new TextRun({ text: `${formFields.openElectiveTables[index].name}`, bold: true, font: 'Cambria', size: 22 })], spacing: { before: 400 } }),
+            table,
+            new Paragraph({ spacing: { before: 400 } }),
+          ]).flat(),
+          new Paragraph({
+            alignment: AlignmentType.CENTER,
+            children: [
+              new TextRun({
+                text: 'APPENDIX C: MANDATORY COURSES',
+                bold: true,
+                font: 'Cambria',
+                size: 22,
+              }),
+            ],
+          }),
+          ...mandatoryCourseTables.map((table, index) => [
+            new Paragraph({ alignment: AlignmentType.LEFT, children: [new TextRun({ text: `${formFields.mandatoryCourseTables[index].name}`, bold: true, font: 'Cambria', size: 22 })], spacing: { before: 400 } }),
+            table,
+            new Paragraph({ spacing: { before: 400 } }),
+          ]).flat(),
+        ],
+      }],
     });
 
     const electivesBlob = await Packer.toBlob(electivesDoc);
@@ -675,10 +934,14 @@ const CreateCurriculum: React.FC = () => {
     ];
 
     const allElectiveCourses = formFields.professionalElectives.flatMap(col => col.cells);
+    const allOpenElectiveCourses = formFields.openElectiveTables.flatMap(table => table.courses);
+    const allMandatoryCourses = formFields.mandatoryCourseTables.flatMap(table => table.courses);
 
     const syllabusFiles = [
-      ...allSemesterCourses.map(course => course.syllabusFile),
-      ...allElectiveCourses.map(cell => cell.syllabusFile),
+      ...allSemesterCourses.map(course => (course as any).syllabusFile),
+      ...allElectiveCourses.map(cell => (cell as any).syllabusFile),
+      ...allOpenElectiveCourses.map(course => (course as any).syllabusFile),
+      ...allMandatoryCourses.map(course => (course as any).syllabusFile),
     ].filter((file): file is File => !!file);
 
     const syllabusBuffers: ArrayBuffer[] = await Promise.all(
@@ -700,22 +963,21 @@ const CreateCurriculum: React.FC = () => {
     });
 
     saveAs(finalBlob, 'Full_Curriculum.docx');
-    toast.success('✔️ Full Curriculum downloaded successfully');
+    toast.success('Ã¢Å“â€�Ã¯Â¸ï¿½ Full Curriculum downloaded successfully');
   } catch (error) {
     console.error('Error generating curriculum:', error);
-    toast.error('❌ Failed to generate document');
+    toast.error('Ã¢ï¿½Å’ Failed to generate document');
   } finally {
     setIsGenerating(false);
   }
 };
 
   const handleManualUpload = async () => {
-    if (!manualUploadFile) return toast.error("📂 Select a DOCX file first");
+    if (!manualUploadFile) return toast.error("ðŸ“‚ Select a DOCX file first");
     if (!formFields.regulation.trim() || !formFields.branchName.trim()) {
       toast.error("Please fill in both Regulation and Department before uploading.");
       return;
     }
-
 
     setIsUploading(true);
 
@@ -746,11 +1008,11 @@ const CreateCurriculum: React.FC = () => {
         throw new Error(errData.error || "Failed to link file");
       }
 
-      toast.success("✅ File uploaded and sent to superuser");
+      toast.success("âœ… File uploaded and sent to superuser");
       setManualUploadFile(null);
     } catch (err: any) {
       console.error(err);
-      toast.error(`❌ ${err.message}`);
+      toast.error(`â�Œ ${err.message}`);
     } finally {
       setIsUploading(false);
     }
@@ -878,177 +1140,372 @@ const CreateCurriculum: React.FC = () => {
     );
   };
 
-  const renderProfessionalElectives = () => (
-    <div className="space-y-6">
-      <div className="rounded-md border dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm">
-        <div className="bg-gradient-to-r from-purple-500 to-purple-600 text-white p-4 rounded-t-md">
-          <h3 className="text-lg font-semibold">Professional Electives</h3>
-        </div>
-        <div className="p-6">
-          <div className="flex overflow-auto space-x-6">
-            {formFields.professionalElectives.map((col, colIndex) => (
-              <div key={colIndex} className="min-w-[250px] bg-white shadow-md p-4 rounded-md border border-purple-200">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="space-y-2">
-                    <input
-                      type="text"
-                      value={col.verticalNumber}
-                      readOnly
-                      className="w-full p-2 border rounded-md text-sm bg-gray-100 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                    />
-                    <input
-                      type="text"
-                      value={col.verticalName}
-                      onChange={(e) => handleElectiveVerticalNameChange(colIndex, e.target.value)}
-                      className="w-full p-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
-                      placeholder="Vertical Name"
-                    />
-                  </div>
-                  <button
-                    className="ml-2 text-red-600 dark:text-red-400 text-xs"
-                    onClick={() => removeElectiveColumn(colIndex)}
-                  >
-                    ✕
-                  </button>
-                </div>
-                {col.cells.map((cell, rowIndex) => (
-                  <div key={rowIndex} className="mb-3 space-y-1">
-                    <input
-                      type="text"
-                      value={cell.courseCode}
-                      onChange={(e) => handleElectiveCellChange(colIndex, rowIndex, 'courseCode', e.target.value)}
-                      placeholder="Course Code"
-                      className="w-full p-1 border rounded-md text-xs focus:outline-none focus:ring-2 focus:ring-purple-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
-                    />
-                    <input
-                      type="text"
-                      value={cell.courseTitle}
-                      onChange={(e) => handleElectiveCellChange(colIndex, rowIndex, 'courseTitle', e.target.value)}
-                      placeholder="Course Title"
-                      className="w-full p-1 border rounded-md text-xs focus:outline-none focus:ring-2 focus:ring-purple-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
-                    />
-                    <select
-                      value={cell.syllabusUrl || ''}
-                      onChange={async (e) => {
-                        const selectedId = e.target.value;
-                        const selectedSubject = allSubjects.find((subj) => subj._id === selectedId);
-                        if (selectedSubject) {
-                          handleElectiveCellChange(colIndex, rowIndex, 'courseCode', selectedSubject.code);
-                          handleElectiveCellChange(colIndex, rowIndex, 'courseTitle', selectedSubject.title);
-                          if (selectedSubject.syllabusUrl) {
-                            try {
-                              const baseUrl = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000';
-                              const syllabusUrl = `${baseUrl}/api/auth/file/${selectedSubject.syllabusUrl}`;
-                              console.log('Fetching syllabus from:', syllabusUrl);
-                              const response = await fetch(syllabusUrl);
-                              if (!response.ok) throw new Error(`Failed to fetch syllabus file: ${response.statusText}`);
-                              const blob = await response.blob();
-                              const extension = blob.type === 'application/pdf' ? 'pdf' : 'docx';
-                              const fileName = `${selectedSubject.title}.${extension}`;
-                              const file = new File([blob], fileName, { type: blob.type });
-                              handleElectiveCellChange(colIndex, rowIndex, 'syllabusFile', file);
-                              handleElectiveCellChange(colIndex, rowIndex, 'syllabusUrl', selectedSubject.syllabusUrl);
-                            } catch (error) {
-                              console.error('Error fetching syllabus file:', error);
-                              toast.error('Failed to load syllabus file');
-                            }
-                          } else {
-                            handleElectiveCellChange(colIndex, rowIndex, 'syllabusFile', undefined);
-                            handleElectiveCellChange(colIndex, rowIndex, 'syllabusUrl', '');
-                          }
-                        }
-                      }}
-                      className="w-full p-1 border rounded-md text-xs focus:outline-none focus:ring-2 focus:ring-purple-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
-                    >
-                      <option value="">Select Subject</option>
-                      {allSubjects.map((subj) => (
-                        <option key={subj._id} value={subj._id}>
-                          {subj.code} - {subj.title}
-                        </option>
-                      ))}
-                    </select>
-                    {cell.syllabusUrl && (
-                      <p className="text-xs text-green-600 font-medium mt-1">Syllabus File Selected</p>
-                    )}
-                  </div>
-                ))}
-              </div>
-            ))}
-            <button
-              onClick={addElectiveColumn}
-              className="min-w-[150px] h-[60px] p-2 bg-purple-500 hover:bg-purple-600 text-white rounded-md dark:hover:bg-green-800 self-start"
-            >
-              + Add Column
-            </button>
-          </div>
-          <div className="flex space-x-2">
-            <button
-              onClick={addRowToElectiveColumn}
-              className="w-full mt-2 p-1 text-sm bg-purple-500 hover:bg-purple-600 text-white rounded-md dark:hover:bg-purple-700"
-            >
-              + Add Row to All Columns
-            </button>
-            {formFields.professionalElectives[0].cells.length > 1 && (
-              <button
-                onClick={removeRowFromElectiveColumn}
-                className="w-full mt-2 p-1 text-sm bg-red-600 text-white rounded-md hover:bg-red-700 dark:hover:bg-red-800"
-              >
-                - Remove Last Row
-              </button>
-            )}
-          </div>
-          <div className="text-center mt-6">
-            <Button
-              onClick={handleGeneratePDF}
-              className="w-full md:w-auto bg-purple-600 hover:bg-purple-700 text-white"
-              disabled={isGenerating}
-            >
-              {isGenerating ? 'Generating...' : 'Generate Curriculum DOCX'}
-            </Button>
-          </div>
-        </div>
+ const renderProfessionalElectives = () => (
+  <div className="space-y-6">
+    <div className="rounded-md border dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm">
+      <div className="bg-gradient-to-r from-purple-500 to-purple-600 text-white p-4 rounded-t-md">
+        <h3 className="text-lg font-semibold">Professional Electives</h3>
       </div>
-
-      <div className="p-6 border rounded-md bg-white dark:bg-gray-800 shadow-sm">
-        <h2 className="text-xl font-semibold text-purple-600">Send Curriculum to Superuser</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Regulation</label>
-              <input
-                type="text"
-                value={formFields.regulation}
-                onChange={(e) => setFormFields((prev) => ({ ...prev, regulation: e.target.value }))}
-                className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
-                placeholder="E.g., R26"
-              />
+      <div className="p-6">
+        <div className="flex overflow-auto space-x-6">
+          {formFields.professionalElectives.map((col, colIndex) => (
+            <div key={colIndex} className="min-w-[250px] bg-white shadow-md p-4 rounded-md border border-purple-200">
+              <div className="flex items-center justify-between mb-2">
+                <div className="space-y-2">
+                  <input
+                    type="text"
+                    value={col.verticalNumber}
+                    readOnly
+                    className="w-full p-2 border rounded-md text-sm bg-gray-100 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  />
+                  <input
+                    type="text"
+                    value={col.verticalName}
+                    onChange={(e) => handleElectiveVerticalNameChange(colIndex, e.target.value)}
+                    className="w-full p-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
+                    placeholder="Vertical Name"
+                  />
+                </div>
+                <button
+                  className="ml-2 text-red-600 dark:text-red-400 text-xs"
+                  onClick={() => removeElectiveColumn(colIndex)}
+                >
+                Remove
+                </button>
+              </div>
+              {col.cells.map((cell, rowIndex) => (
+                <div key={rowIndex} className="mb-3 space-y-1">
+                  <input
+                    type="text"
+                    value={cell.courseCode}
+                    onChange={(e) => handleElectiveCellChange(colIndex, rowIndex, 'courseCode', e.target.value)}
+                    placeholder="Course Code"
+                    className="w-full p-1 border rounded-md text-xs focus:outline-none focus:ring-2 focus:ring-purple-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
+                  />
+                  <input
+                    type="text"
+                    value={cell.courseTitle}
+                    onChange={(e) => handleElectiveCellChange(colIndex, rowIndex, 'courseTitle', e.target.value)}
+                    placeholder="Course Title"
+                    className="w-full p-1 border rounded-md text-xs focus:outline-none focus:ring-2 focus:ring-purple-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
+                  />
+                  <select
+                    value={cell.syllabusUrl || ''}
+                    onChange={async (e) => {
+                      const selectedId = e.target.value;
+                      const selectedSubject = allSubjects.find((subj) => subj._id === selectedId);
+                      if (selectedSubject) {
+                        handleElectiveCellChange(colIndex, rowIndex, 'courseCode', selectedSubject.code);
+                        handleElectiveCellChange(colIndex, rowIndex, 'courseTitle', selectedSubject.title);
+                        if (selectedSubject.syllabusUrl) {
+                          try {
+                            const baseUrl = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000';
+                            const syllabusUrl = `${baseUrl}/api/auth/file/${selectedSubject.syllabusUrl}`;
+                            console.log('Fetching syllabus from:', syllabusUrl);
+                            const response = await fetch(syllabusUrl);
+                            if (!response.ok) throw new Error(`Failed to fetch syllabus file: ${response.statusText}`);
+                            const blob = await response.blob();
+                            const extension = blob.type === 'application/pdf' ? 'pdf' : 'docx';
+                            const fileName = `${selectedSubject.title}.${extension}`;
+                            const file = new File([blob], fileName, { type: blob.type });
+                            handleElectiveCellChange(colIndex, rowIndex, 'syllabusFile', file);
+                            handleElectiveCellChange(colIndex, rowIndex, 'syllabusUrl', selectedSubject.syllabusUrl);
+                          } catch (error) {
+                            console.error('Error fetching syllabus file:', error);
+                            toast.error('Failed to load syllabus file');
+                          }
+                        } else {
+                          handleElectiveCellChange(colIndex, rowIndex, 'syllabusFile', undefined);
+                          handleElectiveCellChange(colIndex, rowIndex, 'syllabusUrl', '');
+                        }
+                      }
+                    }}
+                    className="w-full p-1 border rounded-md text-xs focus:outline-none focus:ring-2 focus:ring-purple-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
+                  >
+                    <option value="">Select Subject</option>
+                    {allSubjects.map((subj) => (
+                      <option key={subj._id} value={subj._id}>
+                        {subj.code} - {subj.title}
+                      </option>
+                    ))}
+                  </select>
+                  {cell.syllabusUrl && (
+                    <p className="text-xs text-green-600 font-medium mt-1">Syllabus File Selected</p>
+                  )}
+                </div>
+              ))}
             </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Department</label>
-              <input
-                type="text"
-                value={formFields.branchName}
-                onChange={(e) => setFormFields((prev) => ({ ...prev, branchName: e.target.value }))}
-                className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
-                placeholder="E.g., CSE"
-              />
-            </div>
-          </div>
-        <input
-          type="file"
-          accept=".docx"
-          onChange={(e) => setManualUploadFile(e.target.files?.[0] || null)}
-          className="w-full p-2 mt-4 border rounded-md dark:bg-gray-800 dark:text-white"
-        />
-        <Button
-          onClick={handleManualUpload}
-          disabled={!manualUploadFile || isUploading}
-          className="mt-4 bg-purple-600 hover:bg-purple-700 text-white"
-        >
-          {isUploading ? "Uploading..." : "Send Curriculum DOCX"}
-        </Button>
+          ))}
+          <button
+            onClick={addElectiveColumn}
+            className="min-w-[150px] h-[60px] p-2 bg-purple-500 hover:bg-purple-600 text-white rounded-md dark:hover:bg-green-800 self-start"
+          >
+            + Add Column
+          </button>
+        </div>
+        <div className="flex space-x-2">
+          <button
+            onClick={addRowToElectiveColumn}
+            className="w-full mt-2 p-1 text-sm bg-purple-500 hover:bg-purple-600 text-white rounded-md dark:hover:bg-purple-700"
+          >
+            + Add Row to All Columns
+          </button>
+          {formFields.professionalElectives[0].cells.length > 1 && (
+            <button
+              onClick={removeRowFromElectiveColumn}
+              className="w-full mt-2 p-1 text-sm bg-red-600 text-white rounded-md hover:bg-red-700 dark:hover:bg-red-800"
+            >
+              - Remove Last Row
+            </button>
+          )}
+        </div>
       </div>
     </div>
-  );
+  </div>
+);
+
+  const renderOpenElectiveInputs = () => (
+  <div className="space-y-6">
+    {formFields.openElectiveTables.map((table, index) => {
+      const key = index === 0 ? 'openElective1' : 'openElective2';
+      const totalCredits = calculateTotalCredits(table.courses);
+
+      return (
+        <div key={index} className="rounded-md border dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm">
+          <div className="bg-gradient-to-r from-purple-500 to-purple-600 text-white p-4 rounded-t-md">
+            <h3 className="text-lg font-semibold">{table.name}</h3>
+          </div>
+          <div className="p-6">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Number of Courses</label>
+              <input
+                type="number"
+                min="1"
+                value={courseCounts[key]}
+                onChange={(e) => handleCourseCountChange(key, parseInt(e.target.value) || 1)}
+                className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center space-x-2 font-medium text-gray-700 dark:text-gray-300 text-sm">
+                <span className="w-12 text-center">S.No.</span>
+                <span className="flex-1">Course Title</span>
+                <span className="w-12 text-center">Sem</span>
+                <span className="w-12 text-center">L</span>
+                <span className="w-12 text-center">T</span>
+                <span className="w-12 text-center">P</span>
+                <span className="w-12 text-center">C</span>
+                <span className="w-8"></span>
+              </div>
+
+              {table.courses.map((course, courseIndex) => (
+                <div key={courseIndex} className="space-y-2">
+                  {/* Main Course Row */}
+                  <CourseInputRow
+                    category={key}
+                    index={courseIndex}
+                    course={course}
+                    isSemester={false}
+                    onChange={(i, field, value) => handleCourseChange(key, i, field as keyof Course, value)}
+                    onRemove={() => handleRemoveCourse(key, courseIndex)}
+                    canRemove={table.courses.length > 1}
+                    allSubjects={allSubjects}
+                  />
+
+                  {/* Select Syllabus Dropdown (BELOW LTPC) */}
+                  <select
+                    className="w-full p-2 border rounded-md dark:bg-gray-800 dark:border-gray-600 dark:text-white"
+                    onChange={(e) => {
+                      const selected = allSubjects.find((s) => s._id === e.target.value);
+                      if (selected) {
+                        const updatedCourses = [...table.courses];
+                        updatedCourses[courseIndex] = {
+                          ...updatedCourses[courseIndex],
+                          courseTitle: selected.title,
+                          syllabusUrl: selected._id,
+                        };
+                        const updatedTables = [...formFields.openElectiveTables];
+                        updatedTables[index].courses = updatedCourses;
+                        setFormFields((prev) => ({
+                          ...prev,
+                          openElectiveTables: updatedTables,
+                        }));
+                      }
+                    }}
+                  >
+                    <option value="">-- Select a syllabus --</option>
+                    {allSubjects.map((subject) => (
+                      <option key={subject._id} value={subject._id}>
+                        {subject.code} - {subject.title}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ))}
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Total Credits</label>
+              <input
+                type="text"
+                value={totalCredits.toFixed(1)}
+                readOnly
+                className="w-full p-2 border rounded-md bg-gray-100 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              />
+            </div>
+          </div>
+        </div>
+      );
+    })}
+  </div>
+);
+
+
+const renderMandatoryCourseInputs = () => (
+  <div className="space-y-6">
+    {formFields.mandatoryCourseTables.map((table, index) => {
+      const key = index === 0 ? 'mandatoryCourse1' : 'mandatoryCourse2';
+      const totalCredits = calculateTotalCredits(table.courses);
+
+      return (
+        <div key={index} className="rounded-md border dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm">
+          <div className="bg-gradient-to-r from-purple-500 to-purple-600 text-white p-4 rounded-t-md">
+            <h3 className="text-lg font-semibold">{table.name}</h3>
+          </div>
+          <div className="p-6">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Number of Courses</label>
+              <input
+                type="number"
+                min="1"
+                value={courseCounts[key]}
+                onChange={(e) => handleCourseCountChange(key, parseInt(e.target.value) || 1)}
+                className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center space-x-2 font-medium text-gray-700 dark:text-gray-300 text-sm">
+                <span className="w-12 text-center">S.No.</span>
+                <span className="flex-1">Course Title</span>
+                <span className="w-12 text-center">Sem</span>
+                <span className="w-12 text-center">L</span>
+                <span className="w-12 text-center">T</span>
+                <span className="w-12 text-center">P</span>
+                <span className="w-12 text-center">C</span>
+                <span className="w-8"></span>
+              </div>
+
+              {table.courses.map((course, courseIndex) => (
+                <div key={courseIndex} className="space-y-2">
+                   <CourseInputRow
+                    category={key}
+                    index={courseIndex}
+                    course={course}
+                    isSemester={false}
+                    onChange={(i, field, value) => handleCourseChange(key, i, field as keyof Course, value)}
+                    onRemove={() => handleRemoveCourse(key, courseIndex)}
+                    canRemove={table.courses.length > 1}
+                    allSubjects={allSubjects}
+                  />
+                  <select
+                    className="w-full p-2 border rounded-md dark:bg-gray-800 dark:border-gray-600 dark:text-white"
+                    onChange={(e) => {
+                      const selected = allSubjects.find((s) => s._id === e.target.value);
+                      if (selected) {
+                        const updatedCourses = [...table.courses];
+                        updatedCourses[courseIndex] = {
+                          ...updatedCourses[courseIndex],
+                          courseTitle: selected.title,
+                          syllabusUrl: selected._id,
+                        };
+                        const updatedTables = [...formFields.mandatoryCourseTables];
+                        updatedTables[index].courses = updatedCourses;
+                        setFormFields((prev) => ({
+                          ...prev,
+                          mandatoryCourseTables: updatedTables,
+                        }));
+                      }
+                    }}
+                  >
+                    <option value="">-- Select a syllabus --</option>
+                    {allSubjects.map((subject) => (
+                      <option key={subject._id} value={subject._id}>
+                        {subject.code} - {subject.title}
+                      </option>
+                    ))}
+                  </select>
+
+                </div>
+              ))}
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Total Credits</label>
+              <input
+                type="text"
+                value={totalCredits.toFixed(1)}
+                readOnly
+                className="w-full p-2 border rounded-md bg-gray-100 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              />
+            </div>
+          </div>
+        </div>
+      );
+    })}
+    <div className="text-center mt-6">
+      <Button
+        onClick={handleGeneratePDF}
+        className="w-full md:w-auto bg-purple-600 hover:bg-purple-700 text-white"
+        disabled={isGenerating}
+      >
+        {isGenerating ? 'Generating...' : 'Generate Curriculum DOCX'}
+      </Button>
+    </div>
+    <div className="p-6 border rounded-md bg-white dark:bg-gray-800 shadow-sm">
+      <h2 className="text-xl font-semibold text-purple-600">Send Curriculum to Superuser</h2>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Regulation</label>
+          <input
+            type="text"
+            value={formFields.regulation}
+            onChange={(e) => setFormFields((prev) => ({ ...prev, regulation: e.target.value }))}
+            className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
+            placeholder="E.g., R26"
+          />
+        </div>
+        
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Department</label>
+          <input
+            type="text"
+            value={formFields.branchName}
+            onChange={(e) => setFormFields((prev) => ({ ...prev, branchName: e.target.value }))}
+            className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
+            placeholder="E.g., CSE"
+          />
+        </div>
+      </div>
+      
+      <input
+        type="file"
+        accept=".docx"
+        onChange={(e) => setManualUploadFile(e.target.files?.[0] || null)}
+        className="w-full p-2 mt-4 border rounded-md dark:bg-gray-800 dark:text-white"
+      />
+      <Button
+        onClick={handleManualUpload}
+        disabled={!manualUploadFile || isUploading}
+        className="mt-4 bg-purple-600 hover:bg-purple-700 text-white"
+      >
+        {isUploading ? "Uploading..." : "Send Curriculum DOCX"}
+      </Button>
+    </div>
+    
+  </div>
+);
 
   return (
     <div className="flex flex-col items-center min-h-screen bg-white dark:bg-gray-900 p-6">
@@ -1069,6 +1526,8 @@ const CreateCurriculum: React.FC = () => {
             { key: 'categories', label: 'Category Courses' },
             { key: 'semesters', label: 'Semester Courses' },
             { key: 'electives', label: 'Professional Electives' },
+            { key: 'openElectives', label: 'Open Electives' },
+            { key: 'mandatoryCourses', label: 'Mandatory Courses' },
           ].map(({ key, label }) => (
             <button
               key={key}
@@ -1127,117 +1586,125 @@ const CreateCurriculum: React.FC = () => {
                       <div className="flex items-center space-x-2 font-medium text-gray-700 dark:text-gray-300 text-sm">
                         <span className="w-1/4 text-center">Version Number</span>
                         <span className="w-1/4 text-center">Date</span>
-                        <span className="w-1/4 text-center">Author Name</span>
-                        <span className="w-1/4 text-center">Update Summary</span>
+                        <span className="w-14 text-center">Author Name</span>
+                        <span className="w-1/2 text-center">Updates</span>
+                        <span className="w-8"></span>
                       </div>
-                      {formFields.updateHistory.map((entry, index) => (
-                        <div key={index} className="grid grid-cols-4 gap-4 items-center">
+                      {formFields.updateHistory.map((row, index) => (
+                        <div key={index} className="flex items-center space-x-2 py-2">
                           <input
                             type="text"
-                            value={entry.versionNo}
-                            onChange={(e) => {
-                              const newHistory = [...formFields.updateHistory];
-                              newHistory[index].versionNo = e.target.value;
-                              setFormFields((prev) => ({ ...prev, updateHistory: newHistory }));
-                            }}
-                            className="p-2 border rounded-md dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-                            placeholder="Version No."
-                          />
-                          <input
-                            type="date"
-                            value={entry.date}
-                            onChange={(e) => {
-                              const newHistory = [...formFields.updateHistory];
-                              newHistory[index].date = e.target.value;
-                              setFormFields((prev) => ({ ...prev, updateHistory: newHistory }));
-                            }}
-                            className="p-2 border rounded-md dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-                            placeholder="Date"
+                            value={row.versionNo}
+                            onChange={(e) =>
+                              setFormFields((prev) => {
+                                const updated = [...prev.updateHistory];
+                                updated[index].versionNo = e.target.value;
+                                return { ...prev, updateHistory: updated };
+                              })
+                            }
+                            className="w-1/4 p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white text-sm"
+                            placeholder="e.g., 1.0"
                           />
                           <input
                             type="text"
-                            value={entry.authorName}
-                            onChange={(e) => {
-                              const newHistory = [...formFields.updateHistory];
-                              newHistory[index].authorName = e.target.value;
-                              setFormFields((prev) => ({ ...prev, updateHistory: newHistory }));
-                            }}
-                            className="p-2 border rounded-md dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-                            placeholder="Author Name"
+                            value={row.date}
+                            onChange={(e) =>
+                              setFormFields((prev) => {
+                                const updated = [...prev.updateHistory];
+                                updated[index].date = e.target.value;
+                                return { ...prev, updateHistory: updated };
+                              })
+                            }
+                            className="w-1/4 p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white text-sm"
+                            placeholder="e.g., 2023-01-01"
                           />
                           <input
                             type="text"
-                            value={entry.updates}
-                            onChange={(e) => {
-                              const newHistory = [...formFields.updateHistory];
-                              newHistory[index].updates = e.target.value;
-                              setFormFields((prev) => ({ ...prev, updateHistory: newHistory }));
-                            }}
-                            className="p-2 border rounded-md dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-                            placeholder="Update Summary"
+                            value={row.authorName}
+                            onChange={(e) =>
+                              setFormFields((prev) => {
+                                const updated = [...prev.updateHistory];
+                                updated[index].authorName = e.target.value;
+                                return { ...prev, updateHistory: updated };
+                              })
+                            }
+                            className="w-1/4 p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white text-sm"
+                            placeholder="e.g., John Doe"
                           />
+                          <Textarea
+                            value={row.updates}
+                            onChange={(e) =>
+                              setFormFields((prev) => {
+                                const updated = [...prev.updateHistory];
+                                updated[index].updates = e.target.value;
+                                return { ...prev, updateHistory: updated };
+                              })
+                            }
+                            className="w-1/2 p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white text-sm"
+                            placeholder="e.g., Initial version"
+                          />
+                          {formFields.updateHistory.length > 1 && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() =>
+                                setFormFields((prev) => ({
+                                  ...prev,
+                                  updateHistory: prev.updateHistory.filter((_, i) => i !== index),
+                                }))
+                              }
+                              className="w-8 h-8 p-0 flex items-center justify-center text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
                         </div>
                       ))}
-                      <div className="flex space-x-2">
-                        <button
-                          onClick={() => {
-                            setFormFields((prev) => ({
-                              ...prev,
-                              updateHistory: [...prev.updateHistory, { versionNo: '', date: '', authorName: '', updates: '' }],
-                            }));
-                          }}
-                          className="px-4 py-1 bg-purple-500 hover:bg-purple-600 text-white rounded"
-                        >
-                          + Add Row
-                        </button>
-                        {formFields.updateHistory.length > 1 && (
-                          <button
-                            onClick={() => {
-                              setFormFields((prev) => ({
-                                ...prev,
-                                updateHistory: prev.updateHistory.slice(0, -1),
-                              }));
-                            }}
-                            className="px-4 py-1 bg-red-600 text-white rounded hover:bg-red-700"
-                          >
-                            - Remove Last
-                          </button>
-                        )}
-                      </div>
+                      <Button
+                        onClick={() =>
+                          setFormFields((prev) => ({
+                            ...prev,
+                            updateHistory: [...prev.updateHistory, { versionNo: '', date: '', authorName: '', updates: '' }],
+                          }))
+                        }
+                        className="mt-2 bg-purple-500 hover:bg-purple-600 text-white"
+                      >
+                        + Add Update
+                      </Button>
                     </div>
                   </div>
                 </div>
               </div>
             )}
             {activeSection === 'credits' && (
-              <div className="space-y-4">
-                <div className="rounded-md border dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm">
-                  <div className="bg-gradient-to-r from-purple-500 to-purple-600 text-white p-4 rounded-t-md">
-                    <h3 className="text-lg font-semibold">Credits</h3>
-                  </div>
-                  <div className="p-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {CATEGORIES.map(({ key, label }) => (
-                        <div key={key} className="space-y-2">
-                          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                            {label} Credits
-                          </label>
-                          <input
-                            type="number"
-                            value={formFields[key as keyof FormFields] as string}
-                            onChange={(e) => setFormFields((prev) => ({ ...prev, [key]: e.target.value }))}
-                            className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
-                            placeholder={`E.g., ${key === 'hsmc' ? '12' : key === 'bsc' ? '24' : key === 'esc' ? '22' : key === 'pcc' ? '48' : key === 'pec' ? '18' : key === 'oec' ? '12' : key === 'eec' ? '10' : '0'}`}
-                          />
-                        </div>
-                      ))}
+              <div className="space-y-6">
+                {CATEGORIES.map(({ key, label }) => (
+                  <div key={key} className="rounded-md border dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm">
+                    <div className="bg-gradient-to-r from-purple-500 to-purple-600 text-white p-4 rounded-t-md">
+                      <h3 className="text-lg font-semibold">{label}</h3>
+                    </div>
+                    <div className="p-6">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Total Credits</label>
+                        <input
+                          type="number"
+                          min="0"
+                          value={(formFields[key as keyof FormFields] as string) || ''}
+                          onChange={(e) =>
+                            setFormFields((prev) => ({ ...prev, [key]: e.target.value }))
+                          }
+                          className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
+                        />
+                      </div>
                     </div>
                   </div>
-                </div>
+                ))}
               </div>
             )}
             {activeSection === 'categories' && (
-              <div className="space-y-6">{CATEGORIES.map(({ key, label }) => renderCourseInputs(key, label))}</div>
+              <div className="space-y-6">
+                {CATEGORIES.map(({ key, label }) => renderCourseInputs(key, label))}
+              </div>
             )}
             {activeSection === 'semesters' && (
               <div className="space-y-6">
@@ -1245,6 +1712,8 @@ const CreateCurriculum: React.FC = () => {
               </div>
             )}
             {activeSection === 'electives' && renderProfessionalElectives()}
+            {activeSection === 'openElectives' && renderOpenElectiveInputs()}
+            {activeSection === 'mandatoryCourses' && renderMandatoryCourseInputs()}
           </div>
         </div>
       </div>
