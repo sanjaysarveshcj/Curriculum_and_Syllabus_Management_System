@@ -42,21 +42,22 @@ Extract the following syllabus data. Respond with ONLY a valid JSON object (no m
   "unit5Name": "", "unit5Hours": "", "unit5Content": "",
   "theoryPeriods": "", "practicalExercises": "", "practicalPeriods": "", "totalPeriods": "",
   "courseFormat": "", "assessments": "",
-  "co1": "", "co2": "", "co3": "", "co4": "", "co5": "",
+  "courseOutcomes" : "",
   "textBooks": "", "references": "",
   "ytResources": "", "webResources": "", "listOfSoftwares": "", "eBook": "",
   "L": "", "T": "", "P": "", "C": ""
 }
 rules:
 1)for practical exercise map the content under them until the section next header arrives .
-2)the content may not be structure, while passing as json make them structured ,like if it as mutiple point add bulltin or numbering to them.
+2)the content may not be structure, while passing as json make them structured ,like if it as mutiple point.
 3)in the subject field pass the course code while passing the json.
-4) while passing as JSON,separate content in course objectives, text books, references, web resources, list of softwares, e-book to separate lines, each new line should start with a number followed by a dot and a space.and give one line space for each new point
+4)while passing as JSON,separate content in course objectives, course outcomes, text books, references, web resources, list of softwares, e-book to separate lines, each new point should start with a new line. Remove any numbering like "1.", "2)", "-", "*", "CO1:", "C02:",etc.
 5)if the content is not present in the syllabus, pass it as empty string in json. Don't pass null or undefined. 
 6)practical exercise and coding exercise are not same , so dont treat them as same.
 7)while passing as json structure every field properly if they are unstructure except for unit contents.
 8)dont map coding exercise to practical exercises.
 9)for the unit contents take everything under them until next header comes , it may also as coding exercises,assignments so map them as unit content.onlymap the content under the unit's content .
+
 TEXT:
 ${rawText}
 `;

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Button } from '../../components/ui/button';
 import toast from 'react-hot-toast';
-import { CheckCircle, Upload, AlertCircle, ChevronDown, ChevronUp } from 'lucide-react';
+import { CheckCircle, Upload, AlertCircle, ChevronDown, ChevronUp, Plus, X } from 'lucide-react';
 import { generateDocxFromTemplate } from '../../utils/DocxFromTemplate';
 import { Alert, AlertDescription, AlertTitle } from '../../components/ui/alert';
 
@@ -13,7 +13,7 @@ interface Unit {
 }
 
 interface FormFields {
-  objectives: string;
+  objectives: string[];
   courseDescription: string;
   prerequisites: string;
   units: Unit[];
@@ -24,12 +24,12 @@ interface FormFields {
   courseFormat: string;
   assessments: string;
   courseOutcomes: string[];
-  textBooks: string;
-  references: string;
-  ytResources: string;
-  webResources: string;
-  listOfSoftwares: string;
-  eBook: string;
+  textBooks: string[];
+  references: string[];
+  ytResources: string[];
+  webResources: string[];
+  listOfSoftwares: string[];
+  eBook: string[];
   L: string;
   T: string;
   P: string;
@@ -59,23 +59,23 @@ const CreateSyllabus = () => {
 
   // Form fields state
   const [formFields, setFormFields] = useState<FormFields>({
-    objectives: '',
+    objectives: [''],
     courseDescription: '',
     prerequisites: '',
-    units: Array.from({ length: 5 }, () => ({ name: '', hours: '', content: '' })),
+    units: [{ name: '', hours: '', content: '' }],
     theoryPeriods: '',
     practicalExercises: '',
     practicalPeriods: '',
     totalPeriods: '',
     courseFormat: '',
     assessments: '',
-    courseOutcomes: Array(5).fill(''),
-    textBooks: '',
-    references: '',
-    ytResources: '',
-    webResources: '',
-    listOfSoftwares: '',
-    eBook: '',
+    courseOutcomes: [''],
+    textBooks: [''],
+    references: [''],
+    ytResources: [''],
+    webResources: [''],
+    listOfSoftwares: [''],
+    eBook: [''],
     L: '',
     T: '',
     P: '',
@@ -120,20 +120,34 @@ const CreateSyllabus = () => {
 
       const extractedData = await response.json();
 
-      const units = Array.from({ length: 5 }, (_, i) => ({
-        name: extractedData[`unit${i + 1}Name`] || '',
-        hours: extractedData[`unit${i + 1}Hours`] || '',
-        content: extractedData[`unit${i + 1}Content`] || '',
-      }));
-      const courseOutcomes = Array.from({ length: 5 }, (_, i) => extractedData[`co${i + 1}`] || '');
+      // Map units from extracted data to array of objects
+      const units = [];
+      for (let i = 1; i <= 5; i++) {
+        if (extractedData[`unit${i}Name`] || extractedData[`unit${i}Hours`] || extractedData[`unit${i}Content`]) {
+          units.push({
+            name: extractedData[`unit${i}Name`] || '',
+            hours: extractedData[`unit${i}Hours`] || '',
+            content: extractedData[`unit${i}Content`] || '',
+          });
+        }
+      }
+
+      const courseOutcomes = extractedData.courseOutcomes?.split('\n').filter(Boolean) || [''];
+      const objectives = extractedData.objectives?.split('\n').filter(Boolean) || [''];
+      const textBooks = extractedData.textBooks?.split('\n').filter(Boolean) || [''];
+      const references = extractedData.references?.split('\n').filter(Boolean) || [''];
+      const ytResources = extractedData.ytResources?.split('\n').filter(Boolean) || [''];
+      const webResources = extractedData.webResources?.split('\n').filter(Boolean) || [''];
+      const listOfSoftwares = extractedData.listOfSoftwares?.split('\n').filter(Boolean) || [''];
+      const eBook = extractedData.eBook?.split('\n').filter(Boolean) || [''];
 
       setTitle(extractedData.title || '');
       setSubject(extractedData.subject || '');
       setFormFields({
-        objectives: extractedData.objectives || '',
+        objectives,
         courseDescription: extractedData.courseDescription || '',
         prerequisites: extractedData.prerequisites || '',
-        units,
+        units: units.length > 0 ? units : [{ name: '', hours: '', content: '' }],
         theoryPeriods: extractedData.theoryPeriods || '',
         practicalExercises: extractedData.practicalExercises || '',
         practicalPeriods: extractedData.practicalPeriods || '',
@@ -141,12 +155,12 @@ const CreateSyllabus = () => {
         courseFormat: extractedData.courseFormat || '',
         assessments: extractedData.assessments || '',
         courseOutcomes,
-        textBooks: extractedData.textBooks || '',
-        references: extractedData.references || '',
-        ytResources: extractedData.ytResources || '',
-        webResources: extractedData.webResources || '',
-        listOfSoftwares: extractedData.listOfSoftwares || '',
-        eBook: extractedData.eBook || '',
+        textBooks,
+        references,
+        ytResources,
+        webResources,
+        listOfSoftwares,
+        eBook,
         L: extractedData.L || '',
         T: extractedData.T || '',
         P: extractedData.P || '',
@@ -168,71 +182,41 @@ const CreateSyllabus = () => {
 
   // Transform FormFields to Record<string, string>
   const transformFormFields = (fields: FormFields): Record<string, string> => {
-    return {
-      objectives: fields.objectives,
+    const result: Record<string, string> = {
+      objectives: fields.objectives.join('\n'),
       courseDescription: fields.courseDescription,
       prerequisites: fields.prerequisites,
-      unit1Name: fields.units[0].name,
-      unit1Hours: fields.units[0].hours,
-      unit1Content: fields.units[0].content,
-      unit2Name: fields.units[1].name,
-      unit2Hours: fields.units[1].hours,
-      unit2Content: fields.units[1].content,
-      unit3Name: fields.units[2].name,
-      unit3Hours: fields.units[2].hours,
-      unit3Content: fields.units[2].content,
-      unit4Name: fields.units[3].name,
-      unit4Hours: fields.units[3].hours,
-      unit4Content: fields.units[3].content,
-      unit5Name: fields.units[4].name,
-      unit5Hours: fields.units[4].hours,
-      unit5Content: fields.units[4].content,
       theoryPeriods: fields.theoryPeriods,
       practicalExercises: fields.practicalExercises,
       practicalPeriods: fields.practicalPeriods,
       totalPeriods: fields.totalPeriods,
       courseFormat: fields.courseFormat,
       assessments: fields.assessments,
-      co1: fields.courseOutcomes[0],
-      co2: fields.courseOutcomes[1],
-      co3: fields.courseOutcomes[2],
-      co4: fields.courseOutcomes[3],
-      co5: fields.courseOutcomes[4],
-      textBooks: fields.textBooks,
-      references: fields.references,
-      ytResources: fields.ytResources,
-      webResources: fields.webResources,
-      listOfSoftwares: fields.listOfSoftwares,
-      eBook: fields.eBook,
+      courseOutcomes: fields.courseOutcomes.join('\n'),
+      textBooks: fields.textBooks.join('\n'),
+      references: fields.references.join('\n'),
+      ytResources: fields.ytResources.join('\n'),
+      webResources: fields.webResources.join('\n'),
+      listOfSoftwares: fields.listOfSoftwares.join('\n'),
+      eBook: fields.eBook.join('\n'),
       L: fields.L,
       T: fields.T,
       P: fields.P,
       C: fields.C,
     };
+
+    fields.units.forEach((unit, i) => {
+      result[`unit${i + 1}Name`] = unit.name;
+      result[`unit${i + 1}Hours`] = unit.hours;
+      result[`unit${i + 1}Content`] = unit.content;
+    });
+
+    return result;
   };
 
-  // Validate form fields
+  // Validate form fields (no required fields)
   const validateFormFields = () => {
-    const requiredFields = [
-      title,
-      subject,
-      formFields.objectives,
-      formFields.theoryPeriods,
-      formFields.totalPeriods,
-      formFields.textBooks,
-      formFields.references,
-      formFields.L,
-      formFields.T,
-      formFields.P,
-      formFields.C,
-    ];
-    const allStringsFilled = requiredFields.every((field) => field.trim() !== '');
-    const allUnitsFilled = formFields.units.every(
-      (unit) => unit.name.trim() !== '' && unit.hours.trim() !== '' && unit.content.trim() !== ''
-    );
-    const allCOsFilled = formFields.courseOutcomes.every((co) => co.trim() !== '');
-
-    return allStringsFilled && allUnitsFilled && allCOsFilled;
+    return true; // All fields are optional
   };
 
   // Handle DOCX generation and download
@@ -244,49 +228,60 @@ const CreateSyllabus = () => {
 
     setIsGenerating(true);
 
-    const data = {
+    const data: Record<string, any> = {
       COURSE_TITLE: title,
       COURSE_CODE: subject,
-      OBJECTIVES: formFields.objectives,
+      OBJECTIVES: formFields.objectives.map((obj, i) => ({
+        SNO: `${i + 1}.`,
+        OBJECTIVE: obj,
+      })),
       COURSE_DESCRIPTION: formFields.courseDescription,
       PREREQUISITES: formFields.prerequisites,
-      UNIT1_NAME: formFields.units[0].name,
-      UNIT1_HOURS: formFields.units[0].hours,
-      UNIT1_CONTENT: formFields.units[0].content,
-      UNIT2_NAME: formFields.units[1].name,
-      UNIT2_HOURS: formFields.units[1].hours,
-      UNIT2_CONTENT: formFields.units[1].content,
-      UNIT3_NAME: formFields.units[2].name,
-      UNIT3_HOURS: formFields.units[2].hours,
-      UNIT3_CONTENT: formFields.units[2].content,
-      UNIT4_NAME: formFields.units[3].name,
-      UNIT4_HOURS: formFields.units[3].hours,
-      UNIT4_CONTENT: formFields.units[3].content,
-      UNIT5_NAME: formFields.units[4].name,
-      UNIT5_HOURS: formFields.units[4].hours,
-      UNIT5_CONTENT: formFields.units[4].content,
       THEORY_PERIODS: formFields.theoryPeriods,
       PRACTICAL_EXERCISES: formFields.practicalExercises,
       PRACTICAL_PERIODS: formFields.practicalPeriods,
       TOTAL_PERIODS: formFields.totalPeriods,
       COURSE_FORMAT: formFields.courseFormat,
       ASSESSMENTS: formFields.assessments,
-      CO1: formFields.courseOutcomes[0],
-      CO2: formFields.courseOutcomes[1],
-      CO3: formFields.courseOutcomes[2],
-      CO4: formFields.courseOutcomes[3],
-      CO5: formFields.courseOutcomes[4],
-      TEXT_BOOKS: formFields.textBooks,
-      REFERENCES: formFields.references,
-      YT_RESOURCES: formFields.ytResources,
-      WEB_RESOURCES: formFields.webResources,
-      LIST_OF_SOFTWARES: formFields.listOfSoftwares,
-      E_BOOK: formFields.eBook,
+      TEXTBOOKS: formFields.textBooks.map((tb, i) => ({
+        SNO: `${i + 1}.`,
+        TEXTBOOK: tb,
+      })),
+      REFERENCES: formFields.references.map((ref, i) => ({
+        SNO: `${i + 1}.`,
+        REFERENCE: ref,
+      })),
+      YT_RESOURCES: formFields.ytResources.map((yr, i) => ({
+        SNO: `${i + 1}.`,
+        YT_RESOURCE: yr,
+      })),
+      WEB_RESOURCES: formFields.webResources.map((wr, i) => ({
+        SNO: `${i + 1}.`,
+        WEB_RESOURCE: wr,
+      })),
+      LIST_OF_SOFTWARES: formFields.listOfSoftwares.map((ls, i) => ({
+        SNO: `${i + 1}.`,
+        LIST_OF_SOFTWARE: ls,
+      })),
+      E_BOOK: formFields.eBook.map((eb, i) => ({
+        SNO: `${i + 1}.`,
+        BOOK: eb,
+      })),
       L: formFields.L,
       T: formFields.T,
       P: formFields.P,
       C: formFields.C,
     };
+
+    formFields.units.forEach((unit, i) => {
+      data[`UNIT${i + 1}_NAME`] = unit.name;
+      data[`UNIT${i + 1}_HOURS`] = unit.hours;
+      data[`UNIT${i + 1}_CONTENT`] = unit.content;
+    });
+
+    formFields.courseOutcomes.forEach((co, i) => {
+      data[`CO${i + 1}`] = co;
+    });
 
     try {
       const docxBlob = await generateDocxFromTemplate('/templates/Syllabus-Template.docx', data);
@@ -332,7 +327,7 @@ const CreateSyllabus = () => {
       const allowedTypes = [
         'text/plain',
         'application/pdf',
-        'application/vnd.openxmlformats-officedocument.wordprocessing faculties',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
       ];
       if (!allowedTypes.includes(file.type)) {
         toast.error('Please upload a .txt, .docx, or .pdf file');
@@ -348,6 +343,52 @@ const CreateSyllabus = () => {
   // Toggle section expansion
   const toggleSection = (section: keyof typeof expandedSections) => {
     setExpandedSections((prev) => ({ ...prev, [section]: !prev[section] }));
+  };
+
+  // Add and remove field handlers
+  const addField = (field: keyof FormFields) => {
+    setFormFields((prev) => {
+      if (field === 'units') {
+        return {
+          ...prev,
+          units: [...prev.units, { name: '', hours: '', content: '' }],
+        };
+      }
+      return { ...prev, [field]: [...prev[field], ''] };
+    });
+  };
+
+  const removeField = (field: keyof FormFields, fieldIndex: number, unitIndex?: number) => {
+    setFormFields((prev) => {
+      if (field === 'units' && unitIndex !== undefined) {
+        if (prev.units.length > 1) {
+          return { ...prev, units: prev.units.filter((_, i) => i !== unitIndex) };
+        }
+        return prev;
+      }
+      if (Array.isArray(prev[field])) {
+        return { ...prev, [field]: (prev[field] as string[]).filter((_, i) => i !== fieldIndex) };
+      }
+      return prev;
+    });
+  };
+
+  const updateField = (field: keyof FormFields, fieldIndex: number, value: string) => {
+
+    setFormFields((prev) => {
+      if (Array.isArray(prev[field])) {
+        return { ...prev, [field]: (prev[field] as string[]).map((item, i) => (i === fieldIndex ? value : item)) };
+      }
+      return prev;
+    });
+  };
+
+  const updateUnitField = (unitIndex: number, key: keyof Unit, value: string) => {
+    setFormFields((prev) => {
+      const newUnits = [...prev.units];
+      newUnits[unitIndex] = { ...newUnits[unitIndex], [key]: value };
+      return { ...prev, units: newUnits };
+    });
   };
 
   return (
@@ -460,9 +501,7 @@ const CreateSyllabus = () => {
                   {method === 'upload' && !showManualFallback && (
                     <div
                       className={`border-2 border-dashed rounded-xl p-8 text-center transition-all ${
-                        dragActive
-                          ? 'border-indigo-500 bg-indigo-50'
-                          : 'border-gray-300 bg-gray-50'
+                        dragActive ? 'border-indigo-500 bg-indigo-50' : 'border-gray-300 bg-gray-50'
                       }`}
                       onDragOver={handleDragOver}
                       onDragLeave={handleDragLeave}
@@ -534,7 +573,7 @@ const CreateSyllabus = () => {
                                   htmlFor="title"
                                   className="block text-sm font-medium text-gray-700"
                                 >
-                                  Syllabus Title <span className="text-red-500">*</span>
+                                  Syllabus Title
                                   <span className="ml-1 text-gray-400" title="Enter the full course title">
                                     ⓘ
                                   </span>
@@ -553,7 +592,7 @@ const CreateSyllabus = () => {
                                   htmlFor="subject"
                                   className="block text-sm font-medium text-gray-700"
                                 >
-                                  Subject Code <span className="text-red-500">*</span>
+                                  Subject Code
                                   <span className="ml-1 text-gray-400" title="Enter the course code (e.g., CS101)">
                                     ⓘ
                                   </span>
@@ -570,16 +609,36 @@ const CreateSyllabus = () => {
                             </div>
                             <div>
                               <label className="block text-sm font-medium text-gray-700">
-                                Course Objectives <span className="text-red-500">*</span>
+                                Course Objectives
                               </label>
-                              <textarea
-                                value={formFields.objectives}
-                                onChange={(e) =>
-                                  setFormFields((prev) => ({ ...prev, objectives: e.target.value }))
-                                }
-                                className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 min-h-[100px]"
-                                placeholder="Enter course objectives, one per line..."
-                              />
+                              {formFields.objectives.map((obj, index) => (
+                                <div key={`objective-${index}`} className="flex items-center space-x-2 mt-2">
+                                  <input
+                                    type="text"
+                                    value={obj}
+                                    onChange={(e) => updateField('objectives', index, e.target.value)}
+                                    className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                    placeholder={`Objective ${index + 1}`}
+                                  />
+                                  {formFields.objectives.length > 1 && (
+                                    <Button
+                                      variant="outline"
+                                      size="icon"
+                                      onClick={() => removeField('objectives', index)}
+                                      className="border-red-300 text-red-600 hover:bg-red-50"
+                                    >
+                                      <X className="h-4 w-4" />
+                                    </Button>
+                                  )}
+                                </div>
+                              ))}
+                              <Button
+                                variant="outline"
+                                onClick={() => addField('objectives')}
+                                className="mt-2 border-indigo-300 text-indigo-600 hover:bg-indigo-50"
+                              >
+                                <Plus className="h-4 w-4 mr-2" /> Add Objective
+                              </Button>
                             </div>
                             <div>
                               <label className="block text-sm font-medium text-gray-700">
@@ -633,74 +692,55 @@ const CreateSyllabus = () => {
                         </button>
                         {expandedSections.units && (
                           <div className="p-5 space-y-6">
-                            {formFields.units.map((unit, index) => (
-                              <div
-                                key={`unit-${index}`}
-                                className="p-4 bg-white rounded-lg shadow-sm"
-                              >
-                                <h4 className="text-md font-semibold text-gray-800 mb-4">
-                                  Unit {index + 1}
-                                </h4>
-                                <div className="space-y-4">
-                                  <div>
-                                    <label className="block text-sm font-medium text-gray-700">
-                                      Name <span className="text-red-500">*</span>
-                                    </label>
-                                    <input
-                                      type="text"
-                                      value={unit.name}
-                                      onChange={(e) => {
-                                        const newUnits = [...formFields.units];
-                                        newUnits[index] = {
-                                          ...newUnits[index],
-                                          name: e.target.value,
-                                        };
-                                        setFormFields((prev) => ({ ...prev, units: newUnits }));
-                                      }}
-                                      className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                                      placeholder={`Unit ${index + 1} name`}
-                                    />
-                                  </div>
-                                  <div>
-                                    <label className="block text-sm font-medium text-gray-700">
-                                      Hours <span className="text-red-500">*</span>
-                                    </label>
-                                    <input
-                                      type="text"
-                                      value={unit.hours}
-                                      onChange={(e) => {
-                                        const newUnits = [...formFields.units];
-                                        newUnits[index] = {
-                                          ...newUnits[index],
-                                          hours: e.target.value,
-                                        };
-                                        setFormFields((prev) => ({ ...prev, units: newUnits }));
-                                      }}
-                                      className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                                      placeholder={`Unit ${index + 1} hours`}
-                                    />
-                                  </div>
-                                  <div>
-                                    <label className="block text-sm font-medium text-gray-700">
-                                      Content <span className="text-red-500">*</span>
-                                    </label>
-                                    <textarea
-                                      value={unit.content}
-                                      onChange={(e) => {
-                                        const newUnits = [...formFields.units];
-                                        newUnits[index] = {
-                                          ...newUnits[index],
-                                          content: e.target.value,
-                                        };
-                                        setFormFields((prev) => ({ ...prev, units: newUnits }));
-                                      }}
-                                      className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 min-h-[100px]"
-                                      placeholder={`Unit ${index + 1} content`}
-                                    />
-                                  </div>
+                            {formFields.units.map((unit, unitIdx) => (
+                              <div key={unitIdx} className="border rounded-lg p-4 bg-white mb-4">
+                                <div className="flex items-center justify-between mb-2">
+                                  <h4 className="text-md font-semibold text-gray-800">Unit {unitIdx + 1}</h4>
+                                  {formFields.units.length > 1 && (
+                                    <Button
+                                      variant="outline"
+                                      size="icon"
+                                      onClick={() => removeField('units', unitIdx, unitIdx)}
+                                      className="border-red-300 text-red-600 hover:bg-red-50"
+                                    >
+                                      <X className="h-4 w-4" />
+                                    </Button>
+                                  )}
+                                </div>
+                                <div className="flex flex-col md:flex-row gap-4 mb-2">
+                                  <input
+                                    type="text"
+                                    className="w-full md:w-1/2 rounded border-gray-300 focus:border-indigo-500 focus:ring-indigo-500"
+                                    placeholder={`Unit ${unitIdx + 1} Name`}
+                                    value={unit.name}
+                                    onChange={(e) => updateUnitField(unitIdx, 'name', e.target.value)}
+                                  />
+                                  <input
+                                    type="text"
+                                    className="w-full md:w-1/4 rounded border-gray-300 focus:border-indigo-500 focus:ring-indigo-500"
+                                    placeholder="Hours"
+                                    value={unit.hours}
+                                    onChange={(e) => updateUnitField(unitIdx, 'hours', e.target.value)}
+                                  />
+                                </div>
+                                <div className="space-y-2">
+                                  <label className="block font-medium text-gray-700 mb-1">Content</label>
+                                  <textarea
+                                    className="flex-1 rounded border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 min-h-[200px] w-full resize-y text-base"
+                                    placeholder="Enter unit content..."
+                                    value={unit.content}
+                                    onChange={(e) => updateUnitField(unitIdx, 'content', e.target.value)}
+                                  />
                                 </div>
                               </div>
                             ))}
+                            <Button
+                              variant="outline"
+                              onClick={() => addField('units')}
+                              className="mt-2 border-indigo-300 text-indigo-600 hover:bg-indigo-50"
+                            >
+                              <Plus className="h-4 w-4 mr-2" /> Add Unit
+                            </Button>
                           </div>
                         )}
                       </div>
@@ -726,7 +766,7 @@ const CreateSyllabus = () => {
                             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
                               <div>
                                 <label className="block text-sm font-medium text-gray-700">
-                                  Lecture (L) <span className="text-red-500">*</span>
+                                  Lecture (L)
                                 </label>
                                 <input
                                   type="number"
@@ -741,7 +781,7 @@ const CreateSyllabus = () => {
                               </div>
                               <div>
                                 <label className="block text-sm font-medium text-gray-700">
-                                  Tutorial (T) <span className="text-red-500">*</span>
+                                  Tutorial (T)
                                 </label>
                                 <input
                                   type="number"
@@ -756,7 +796,7 @@ const CreateSyllabus = () => {
                               </div>
                               <div>
                                 <label className="block text-sm font-medium text-gray-700">
-                                  Practical (P) <span className="text-red-500">*</span>
+                                  Practical (P)
                                 </label>
                                 <input
                                   type="number"
@@ -771,7 +811,7 @@ const CreateSyllabus = () => {
                               </div>
                               <div>
                                 <label className="block text-sm font-medium text-gray-700">
-                                  Credits (C) <span className="text-red-500">*</span>
+                                  Credits (C)
                                 </label>
                                 <input
                                   type="number"
@@ -788,7 +828,7 @@ const CreateSyllabus = () => {
                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
                               <div>
                                 <label className="block text-sm font-medium text-gray-700">
-                                  Theory Periods <span className="text-red-500">*</span>
+                                  Theory Periods
                                 </label>
                                 <input
                                   type="text"
@@ -822,7 +862,7 @@ const CreateSyllabus = () => {
                               </div>
                               <div>
                                 <label className="block text-sm font-medium text-gray-700">
-                                  Total Periods <span className="text-red-500">*</span>
+                                  Total Periods
                                 </label>
                                 <input
                                   type="text"
@@ -907,22 +947,38 @@ const CreateSyllabus = () => {
                         {expandedSections.outcomes && (
                           <div className="p-5 space-y-6">
                             {formFields.courseOutcomes.map((co, index) => (
-                              <div key={index}>
+                              <div key={`co-${index}`}>
                                 <label className="block text-sm font-medium text-gray-700">
-                                  CO{index + 1} <span className="text-red-500">*</span>
+                                  CO{index + 1}
                                 </label>
-                                <textarea
-                                  value={co}
-                                  onChange={(e) => {
-                                    const newCOs = [...formFields.courseOutcomes];
-                                    newCOs[index] = e.target.value;
-                                    setFormFields((prev) => ({ ...prev, courseOutcomes: newCOs }));
-                                  }}
-                                  className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 min-h-[100px]"
-                                  placeholder={`Enter course outcome ${index + 1}...`}
-                                />
+                                <div className="flex items-center space-x-2 mt-2">
+                                  <input
+                                    type="text"
+                                    value={co}
+                                    onChange={(e) => updateField('courseOutcomes', index, e.target.value)}
+                                    className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                    placeholder={`Course Outcome ${index + 1}`}
+                                  />
+                                  {formFields.courseOutcomes.length > 1 && (
+                                    <Button
+                                      variant="outline"
+                                      size="icon"
+                                      onClick={() => removeField('courseOutcomes', index)}
+                                      className="border-red-300 text-red-600 hover:bg-red-50"
+                                    >
+                                      <X className="h-4 w-4" />
+                                    </Button>
+                                  )}
+                                </div>
                               </div>
                             ))}
+                            <Button
+                              variant="outline"
+                              onClick={() => addField('courseOutcomes')}
+                              className="mt-2 border-indigo-300 text-indigo-600 hover:bg-indigo-50"
+                            >
+                              <Plus className="h-4 w-4 mr-2" /> Add Course Outcome
+                            </Button>
                           </div>
                         )}
                       </div>
@@ -945,102 +1001,246 @@ const CreateSyllabus = () => {
                           <div className="p-5 space-y-6">
                             <div>
                               <label className="block text-sm font-medium text-gray-700">
-                                Text Books <span className="text-red-500">*</span>
+                                Text Books
                               </label>
-                              <textarea
-                                value={formFields.textBooks}
-                                onChange={(e) =>
-                                  setFormFields((prev) => ({ ...prev, textBooks: e.target.value }))
-                                }
-                                className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 min-h-[100px]"
-                                placeholder="Enter text books, one per line..."
-                              />
+                              {formFields.textBooks.map((tb, index) => (
+                                <div key={`textbook-${index}`} className="flex items-center space-x-2 mt-2">
+                                  <input
+                                    type="text"
+                                    value={tb}
+                                    onChange={(e) => updateField('textBooks', index, e.target.value)}
+                                    className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                    placeholder={`Text Book ${index + 1}`}
+                                  />
+                                  {formFields.textBooks.length > 1 && (
+                                    <Button
+                                      variant="outline"
+                                      size="icon"
+                                      onClick={() => removeField('textBooks', index)}
+                                      className="border-red-300 text-red-600 hover:bg-red-50"
+                                    >
+                                      <X className="h-4 w-4" />
+                                    </Button>
+                                  )}
+                                </div>
+                              ))}
+                              <Button
+                                variant="outline"
+                                onClick={() => addField('textBooks')}
+                                className="mt-2 border-indigo-300 text-indigo-600 hover:bg-indigo-50"
+                              >
+                                <Plus className="h-4 w-4 mr-2" /> Add Text Book
+                              </Button>
                             </div>
                             <div>
                               <label className="block text-sm font-medium text-gray-700">
-                                Reference Books <span className="text-red-500">*</span>
+                                Reference Books
                               </label>
-                              <textarea
-                                value={formFields.references}
-                                onChange={(e) =>
-                                  setFormFields((prev) => ({ ...prev, references: e.target.value }))
-                                }
-                                className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 min-h-[100px]"
-                                placeholder="Enter reference books, one per line..."
-                              />
+                              {formFields.references.map((ref, index) => (
+                                <div key={`reference-${index}`} className="flex items-center space-x-2 mt-2">
+                                  <input
+                                    type="text"
+                                    value={ref}
+                                    onChange={(e) => updateField('references', index, e.target.value)}
+                                    className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                    placeholder={`Reference ${index + 1}`}
+                                  />
+                                  {formFields.references.length > 1 && (
+                                    <Button
+                                      variant="outline"
+                                      size="icon"
+                                      onClick={() => removeField('references', index)}
+                                      className="border-red-300 text-red-600 hover:bg-red-50"
+                                    >
+                                      <X className="h-4 w-4" />
+                                    </Button>
+                                  )}
+                                </div>
+                              ))}
+                              <Button
+                                variant="outline"
+                                onClick={() => addField('references')}
+                                className="mt-2 border-indigo-300 text-indigo-600 hover:bg-indigo-50"
+                              >
+                                <Plus className="h-4 w-4 mr-2" /> Add Reference
+                              </Button>
                             </div>
                             <div>
                               <label className="block text-sm font-medium text-gray-700">
                                 YouTube Resources
                               </label>
-                              <textarea
-                                value={formFields.ytResources}
-                                onChange={(e) =>
-                                  setFormFields((prev) => ({
-                                    ...prev,
-                                    ytResources: e.target.value,
-                                  }))
-                                }
-                                className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 min-h-[100px]"
-                                placeholder="Enter YouTube resource links..."
-                              />
+                              {formFields.ytResources.map((yt, index) => (
+                                <div key={`yt-resource-${index}`} className="flex items-center space-x-2 mt-2">
+                                  <input
+                                    type="text"
+                                    value={yt}
+                                    onChange={(e) => updateField('ytResources', index, e.target.value)}
+                                    className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                    placeholder={`YouTube Resource ${index + 1}`}
+                                  />
+                                  {formFields.ytResources.length > 1 && (
+                                    <Button
+                                      variant="outline"
+                                      size="icon"
+                                      onClick={() => removeField('ytResources', index)}
+                                      className="border-red-300 text-red-600 hover:bg-red-50"
+                                    >
+                                      <X className="h-4 w-4" />
+                                    </Button>
+                                  )}
+                                </div>
+                              ))}
+                              <Button
+                                variant="outline"
+                                onClick={() => addField('ytResources')}
+                                className="mt-2 border-indigo-300 text-indigo-600 hover:bg-indigo-50"
+                              >
+                                <Plus className="h-4 w-4 mr-2" /> Add YouTube Resource
+                              </Button>
                             </div>
                             <div>
                               <label className="block text-sm font-medium text-gray-700">
                                 Web Resources
                               </label>
-                              <textarea
-                                value={formFields.webResources}
-                                onChange={(e) =>
-                                  setFormFields((prev) => ({
-                                    ...prev,
-                                    webResources: e.target.value,
-                                  }))
-                                }
-                                className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 min-h-[100px]"
-                                placeholder="Enter web resource links..."
-                              />
+                              {formFields.webResources.map((web, index) => (
+                                <div key={`web-resource-${index}`} className="flex items-center space-x-2 mt-2">
+                                  <input
+                                    type="text"
+                                    value={web}
+                                    onChange={(e) => updateField('webResources', index, e.target.value)}
+                                    className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                    placeholder={`Web Resource ${index + 1}`}
+                                  />
+                                  {formFields.webResources.length > 1 && (
+                                    <Button
+                                      variant="outline"
+                                      size="icon"
+                                      onClick={() => removeField('webResources', index)}
+                                      className="border-red-300 text-red-600 hover:bg-red-50"
+                                    >
+                                      <X className="h-4 w-4" />
+                                    </Button>
+                                  )}
+                                </div>
+                              ))}
+                              <Button
+                                variant="outline"
+                                onClick={() => addField('webResources')}
+                                className="mt-2 border-indigo-300 text-indigo-600 hover:bg-indigo-50"
+                              >
+                                <Plus className="h-4 w-4 mr-2" /> Add Web Resource
+                              </Button>
                             </div>
                             <div>
                               <label className="block text-sm font-medium text-gray-700">
                                 List of Softwares
                               </label>
-                              <textarea
-                                value={formFields.listOfSoftwares}
-                                onChange={(e) =>
-                                  setFormFields((prev) => ({
-                                    ...prev,
-                                    listOfSoftwares: e.target.value,
-                                  }))
-                                }
-                                className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 min-h-[100px]"
-                                placeholder="Enter software list..."
-                              />
+                              {formFields.listOfSoftwares.map((software, index) => (
+                                <div key={`software-${index}`} className="flex items-center space-x-2 mt-2">
+                                  <input
+                                    type="text"
+                                    value={software}
+                                    onChange={(e) => updateField('listOfSoftwares', index, e.target.value)}
+                                    className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                    placeholder={`Software ${index + 1}`}
+                                  />
+                                  {formFields.listOfSoftwares.length > 1 && (
+                                    <Button
+                                      variant="outline"
+                                      size="icon"
+                                      onClick={() => removeField('listOfSoftwares', index)}
+                                      className="border-red-300 text-red-600 hover:bg-red-50"
+                                    >
+                                      <X className="h-4 w-4" />
+                                    </Button>
+                                  )}
+                                </div>
+                              ))}
+                              <Button
+                                variant="outline"
+                                onClick={() => addField('listOfSoftwares')}
+                                className="mt-2 border-indigo-300 text-indigo-600 hover:bg-indigo-50"
+                              >
+                                <Plus className="h-4 w-4 mr-2" /> Add Software
+                              </Button>
                             </div>
                             <div>
                               <label className="block text-sm font-medium text-gray-700">
-                                E-Book
+                                E-Books
                               </label>
-                              <textarea
-                                value={formFields.eBook}
-                                onChange={(e) =>
-                                  setFormFields((prev) => ({ ...prev, eBook: e.target.value }))
-                                }
-                                className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 min-h-[100px]"
-                                placeholder="Enter e-book details..."
-                              />
+                              {formFields.eBook.map((ebook, index) => (
+                                <div key={`ebook-${index}`} className="flex items-center space-x-2 mt-2">
+                                  <input
+                                    type="text"
+                                    value={ebook}
+                                    onChange={(e) => updateField('eBook', index, e.target.value)}
+                                    className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                    placeholder={`E-Book ${index + 1}`}
+                                  />
+                                  {formFields.eBook.length > 1 && (
+                                    <Button
+                                      variant="outline"
+                                      size="icon"
+                                      onClick={() => removeField('eBook', index)}
+                                      className="border-red-300 text-red-600 hover:bg-red-50"
+                                    >
+                                      <X className="h-4 w-4" />
+                                    </Button>
+                                  )}
+                                </div>
+                              ))}
+                              <Button
+                                variant="outline"
+                                onClick={() => addField('eBook')}
+                                className="mt-2 border-indigo-300 text-indigo-600 hover:bg-indigo-50"
+                              >
+                                <Plus className="h-4 w-4 mr-2" /> Add E-Book
+                              </Button>
                             </div>
                           </div>
                         )}
                       </div>
 
-                      {/* Submit Button */}
-                      <div className="text-center pt-8">
+                      {/* Action Buttons */}
+                      <div className="flex justify-end gap-4">
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            setTitle('');
+                            setSubject('');
+                            setFormFields({
+                              objectives: [''],
+                              courseDescription: '',
+                              prerequisites: '',
+                              units: [{ name: '', hours: '', content: '' }],
+                              theoryPeriods: '',
+                              practicalExercises: '',
+                              practicalPeriods: '',
+                              totalPeriods: '',
+                              courseFormat: '',
+                              assessments: '',
+                              courseOutcomes: [''],
+                              textBooks: [''],
+                              references: [''],
+                              ytResources: [''],
+                              webResources: [''],
+                              listOfSoftwares: [''],
+                              eBook: [''],
+                              L: '',
+                              T: '',
+                              P: '',
+                              C: '',
+                            });
+                            toast.success('Form cleared');
+                          }}
+                          className="border-gray-300 text-gray-600 hover:bg-gray-50"
+                        >
+                          Clear Form
+                        </Button>
                         <Button
                           onClick={handleGenerateDOCX}
-                          className="bg-indigo-600 hover:bg-indigo-700 px-8 py-3 rounded-lg text-white font-semibold"
                           disabled={isGenerating}
-                          type="button"
+                          className="bg-indigo-600 hover:bg-indigo-700 text-white"
                         >
                           {isGenerating ? (
                             <>
@@ -1048,7 +1248,7 @@ const CreateSyllabus = () => {
                               Generating...
                             </>
                           ) : (
-                            'Generate Syllabus'
+                            'Generate DOCX'
                           )}
                         </Button>
                       </div>
@@ -1057,225 +1257,122 @@ const CreateSyllabus = () => {
                 </div>
               )}
 
+              {/* Review & Submit */}
               {currentStep === 2 && (
                 <div className="space-y-8">
-                  <div className="rounded-xl border bg-gray-50 p-6">
-                    <h3 className="text-lg font-semibold text-gray-800 mb-4">Syllabus Summary</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div>
-                        <label className="font-medium text-gray-700">Title</label>
-                        <p className="text-gray-600 mt-1">{title}</p>
-                      </div>
-                      <div>
-                        <label className="font-medium text-gray-700">Subject Code</label>
-                        <p className="text-gray-600 mt-1">{subject}</p>
-                      </div>
-                      <div>
-                        <label className="font-medium text-gray-700">L-T-P-C Structure</label>
-                        <p className="text-gray-600 mt-1">
-                          {formFields.L}-{formFields.T}-{formFields.P}-{formFields.C}
-                        </p>
-                      </div>
-                      <div>
-                        <label className="font-medium text-gray-700">Total Periods</label>
-                        <p className="text-gray-600 mt-1">{formFields.totalPeriods}</p>
-                      </div>
+                  <h3 className="text-lg font-semibold text-gray-800">Review Your Syllabus</h3>
+                  <div className="space-y-6">
+                    <div>
+                      <h4 className="text-md font-semibold text-gray-800">Basic Information</h4>
+                      <p><strong>Title:</strong> {title}</p>
+                      <p><strong>Subject Code:</strong> {subject}</p>
+                      <p><strong>Objectives:</strong></p>
+                      <ul className="list-disc pl-5">
+                        {formFields.objectives.map((obj, index) => (
+                          <li key={`review-objective-${index}`}>{obj}</li>
+                        ))}
+                      </ul>
+                      <p><strong>Course Description:</strong> {formFields.courseDescription}</p>
+                      <p><strong>Prerequisites:</strong> {formFields.prerequisites}</p>
                     </div>
-                    <div className="mt-6 text-center">
-                      <Button
-                        variant="outline"
-                        onClick={() => setShowAllFields((v) => !v)}
-                        className="border-indigo-300 text-indigo-600 hover:bg-indigo-50"
-                      >
-                        {showAllFields ? 'Hide Details' : 'View All Details'}
-                      </Button>
+                    <div>
+                      <h4 className="text-md font-semibold text-gray-800">Course Units</h4>
+                      {formFields.units.map((unit, index) => (
+                        <div key={`review-unit-${index}`} className="mt-2">
+                          <p><strong>Unit {index + 1}:</strong> {unit.name} ({unit.hours} hours)</p>
+                          <p><strong>Content:</strong> {unit.content}</p>
+                        </div>
+                      ))}
                     </div>
-                    {showAllFields && (
-                      <div className="mt-8 space-y-6">
-                        {formFields.objectives && (
-                          <div>
-                            <label className="font-medium text-gray-700 block mb-1">
-                              Course Objectives
-                            </label>
-                            <div className="text-gray-600 whitespace-pre-line bg-white rounded-lg p-4 shadow-sm">
-                              {formFields.objectives}
-                            </div>
-                          </div>
-                        )}
-                        {formFields.courseDescription && (
-                          <div>
-                            <label className="font-medium text-gray-700 block mb-1">
-                              Course Description
-                            </label>
-                            <div className="text-gray-600 whitespace-pre-line bg-white rounded-lg p-4 shadow-sm">
-                              {formFields.courseDescription}
-                            </div>
-                          </div>
-                        )}
-                        {formFields.prerequisites && (
-                          <div>
-                            <label className="font-medium text-gray-700 block mb-1">
-                              Prerequisites
-                            </label>
-                            <div className="text-gray-600 whitespace-pre-line bg-white rounded-lg p-4 shadow-sm">
-                              {formFields.prerequisites}
-                            </div>
-                          </div>
-                        )}
-                        {formFields.units.some((u) => u.name || u.hours || u.content) && (
-                          <div>
-                            <label className="font-medium text-gray-700 block mb-1">Units</label>
-                            <div className="space-y-4">
-                              {formFields.units.map((u, i) =>
-                                u.name || u.hours || u.content ? (
-                                  <div
-                                    key={i}
-                                    className="bg-white rounded-lg p-4 shadow-sm"
-                                  >
-                                    {u.name && (
-                                      <div className="mb-2">
-                                        <span className="font-semibold">Unit {i + 1} Name:</span>{' '}
-                                        {u.name}
-                                      </div>
-                                    )}
-                                    {u.hours && (
-                                      <div className="mb-2">
-                                        <span className="font-semibold">Hours:</span> {u.hours}
-                                      </div>
-                                    )}
-                                    {u.content && (
-                                      <div>
-                                        <span className="font-semibold">Content:</span>{' '}
-                                        <span className="whitespace-pre-line">{u.content}</span>
-                                      </div>
-                                    )}
-                                  </div>
-                                ) : null
-                              )}
-                            </div>
-                          </div>
-                        )}
-                        {formFields.practicalExercises && (
-                          <div>
-                            <label className="font-medium text-gray-700 block mb-1">
-                              Practical Exercises
-                            </label>
-                            <div className="text-gray-600 whitespace-pre-line bg-white rounded-lg p-4 shadow-sm">
-                              {formFields.practicalExercises}
-                            </div>
-                          </div>
-                        )}
-                        {formFields.practicalPeriods && (
-                          <div>
-                            <label className="font-medium text-gray-700 block mb-1">
-                              Number of Practical Periods
-                            </label>
-                            <div className="text-gray-600 bg-white rounded-lg p-4 shadow-sm">
-                              {formFields.practicalPeriods}
-                            </div>
-                          </div>
-                        )}
-                        {formFields.courseFormat && (
-                          <div>
-                            <label className="font-medium text-gray-700 block mb-1">
-                              Course Format
-                            </label>
-                            <div className="text-gray-600 whitespace-pre-line bg-white rounded-lg p-4 shadow-sm">
-                              {formFields.courseFormat}
-                            </div>
-                          </div>
-                        )}
-                        {formFields.assessments && (
-                          <div>
-                            <label className="font-medium text-gray-700 block mb-1">
-                              Assessments & Grading
-                            </label>
-                            <div className="text-gray-600 whitespace-pre-line bg-white rounded-lg p-4 shadow-sm">
-                              {formFields.assessments}
-                            </div>
-                          </div>
-                        )}
-                        {formFields.courseOutcomes.some((co) => co) && (
-                          <div>
-                            <label className="font-medium text-gray-700 block mb-1">
-                              Course Outcomes
-                            </label>
-                            <div className="space-y-4">
-                              {formFields.courseOutcomes.map((co, i) =>
-                                co ? (
-                                  <div
-                                    key={i}
-                                    className="bg-white rounded-lg p-4 shadow-sm"
-                                  >
-                                    <span className="font-semibold">CO{i + 1}:</span> {co}
-                                  </div>
-                                ) : null
-                              )}
-                            </div>
-                          </div>
-                        )}
-                        {formFields.textBooks && (
-                          <div>
-                            <label className="font-medium text-gray-700 block mb-1">
-                              Text Books
-                            </label>
-                            <div className="text-gray-600 whitespace-pre-line bg-white rounded-lg p-4 shadow-sm">
-                              {formFields.textBooks}
-                            </div>
-                          </div>
-                        )}
-                        {formFields.references && (
-                          <div>
-                            <label className="font-medium text-gray-700 block mb-1">
-                              Reference Books
-                            </label>
-                            <div className="text-gray-600 whitespace-pre-line bg-white rounded-lg p-4 shadow-sm">
-                              {formFields.references}
-                            </div>
-                          </div>
-                        )}
-                        {formFields.ytResources && (
-                          <div>
-                            <label className="font-medium text-gray-700 block mb-1">
-                              YouTube Resources
-                            </label>
-                            <div className="text-gray-600 whitespace-pre-line bg-white rounded-lg p-4 shadow-sm">
-                              {formFields.ytResources}
-                            </div>
-                          </div>
-                        )}
-                        {formFields.webResources && (
-                          <div>
-                            <label className="font-medium text-gray-700 block mb-1">
-                              Web Resources
-                            </label>
-                            <div className="text-gray-600 whitespace-pre-line bg-white rounded-lg p-4 shadow-sm">
-                              {formFields.webResources}
-                            </div>
-                          </div>
-                        )}
-                        {formFields.listOfSoftwares && (
-                          <div>
-                            <label className="font-medium text-gray-700 block mb-1">
-                              List of Softwares
-                            </label>
-                            <div className="text-gray-600 whitespace-pre-line bg-white rounded-lg p-4 shadow-sm">
-                              {formFields.listOfSoftwares}
-                            </div>
-                          </div>
-                        )}
-                        {formFields.eBook && (
-                          <div>
-                            <label className="font-medium text-gray-700 block mb-1">
-                              E-Book
-                            </label>
-                            <div className="text-gray-600 whitespace-pre-line bg-white rounded-lg p-4 shadow-sm">
-                              {formFields.eBook}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
+                    <div>
+                      <h4 className="text-md font-semibold text-gray-800">Periods and Credits</h4>
+                      <p><strong>Lecture (L):</strong> {formFields.L}</p>
+                      <p><strong>Tutorial (T):</strong> {formFields.T}</p>
+                      <p><strong>Practical (P):</strong> {formFields.P}</p>
+                      <p><strong>Credits (C):</strong> {formFields.C}</p>
+                      <p><strong>Theory Periods:</strong> {formFields.theoryPeriods}</p>
+                      <p><strong>Practical Periods:</strong> {formFields.practicalPeriods}</p>
+                      <p><strong>Total Periods:</strong> {formFields.totalPeriods}</p>
+                      <p><strong>Practical Exercises:</strong> {formFields.practicalExercises}</p>
+                      <p><strong>Course Format:</strong> {formFields.courseFormat}</p>
+                      <p><strong>Assessments:</strong> {formFields.assessments}</p>
+                    </div>
+                    <div>
+                      <h4 className="text-md font-semibold text-gray-800">Course Outcomes</h4>
+                      <ul className="list-disc pl-5">
+                        {formFields.courseOutcomes.map((co, index) => (
+                          <li key={`review-co-${index}`}>CO{index + 1}: {co}</li>
+                        ))}
+                      </ul>
+                    </div>
+                    <div>
+                      <h4 className="text-md font-semibold text-gray-800">Resources</h4>
+                      <p><strong>Text Books:</strong></p>
+                      <ul className="list-disc pl-5">
+                        {formFields.textBooks.map((tb, index) => (
+                          <li key={`review-textbook-${index}`}>{tb}</li>
+                        ))}
+                      </ul>
+                      <p><strong>References:</strong></p>
+                      <ul className="list-disc pl-5">
+                        {formFields.references.map((ref, index) => (
+                          <li key={`review-reference-${index}`}>{ref}</li>
+                        ))}
+                      </ul>
+                      <p><strong>YouTube Resources:</strong></p>
+                      <ul className="list-disc pl-5">
+                        {formFields.ytResources.map((yt, index) => (
+                          <li key={`review-yt-${index}`}>{yt}</li>
+                        ))}
+                      </ul>
+                      <p><strong>Web Resources:</strong></p>
+                      <ul className="list-disc pl-5">
+                        {formFields.webResources.map((web, index) => (
+                          <li key={`review-web-${index}`}>{web}</li>
+                        ))}
+                      </ul>
+                      <p><strong>List of Softwares:</strong></p>
+                      <ul className="list-disc pl-5">
+                        {formFields.listOfSoftwares.map((software, index) => (
+                          <li key={`review-software-${index}`}>{software}</li>
+                        ))}
+                      </ul>
+                      <p><strong>E-Books:</strong></p>
+                      <ul className="list-disc pl-5">
+                        {formFields.eBook.map((ebook, index) => (
+                          <li key={`review-ebook-${index}`}>{ebook}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                  <div className="flex justify-between gap-4">
+                    <Button
+                      variant="outline"
+                      onClick={() => setCurrentStep(1)}
+                      className="border-indigo-300 text-indigo-600 hover:bg-indigo-50"
+                    >
+                      Back to Edit
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        setIsSubmitting(true);
+                        setTimeout(() => {
+                          toast.success('Syllabus submitted successfully!');
+                          setIsSubmitting(false);
+                        }, 1000);
+                      }}
+                      disabled={isSubmitting}
+                      className="bg-indigo-600 hover:bg-indigo-700 text-white"
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <span className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></span>
+                          Submitting...
+                        </>
+                      ) : (
+                        'Submit Syllabus'
+                      )}
+                    </Button>
                   </div>
                 </div>
               )}
@@ -1288,4 +1385,3 @@ const CreateSyllabus = () => {
 };
 
 export default CreateSyllabus;
-

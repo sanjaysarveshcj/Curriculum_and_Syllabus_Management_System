@@ -3,6 +3,7 @@
 import type React from "react"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -78,6 +79,8 @@ export default function FacultyDashboard({ user }: FacultyDashboardProps) {
   const [title, setTitle] = useState("")
   const [subject, setSubject] = useState("")
   const [syllabusDrafts, setSyllabusDrafts] = useState<SyllabusDraft[]>([]);
+  const router = useRouter();
+
 
 
 
@@ -477,7 +480,7 @@ const handleSendToHOD = async (subjectId: string, file: File) => {
                     //   syllabusDrafts.some((s) => s.title === draft.subject)
                     // )
                     .map((draft) => (
-                    <TableRow key={draft.id} className="hover:bg-muted">
+                    <TableRow key={draft.id} className="hover:bg-muted" onClick={() => setActiveTab("create-final")}>
                       <TableCell className="font-medium">{draft.subject}</TableCell>
                       <TableCell>
                         <Badge className={getStatusColor(draft.status)}>{draft.status}</Badge>
