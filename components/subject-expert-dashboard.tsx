@@ -7,8 +7,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
-import { FileText, CheckCircle, MessageSquare, Download } from "lucide-react"
+import { FileText, CheckCircle, MessageSquare, Download, Upload } from "lucide-react"
 import DashboardLayout from "./dashboard-layout"
+import CreateSyllabus from "./syllabus/create-syllabus"
+
 
 interface User {
   _id: string
@@ -37,8 +39,7 @@ export default function SubjectExpertDashboard({ user }: SubjectExpertDashboardP
   const [selectedSyllabusId, setSelectedSyllabusId] = useState<string | null>(null)
   const [reviews, setReviews] = useState<SubjectItem[]>([])
 
-  useEffect(() => {
-    const fetchAssignedSubjects = async () => {
+  const fetchAssignedSubjects = async () => {
       try {
         const res = await fetch(`http://localhost:5000/api/auth/expert-subjects/${user._id}`)
         const data = await res.json()
@@ -58,27 +59,62 @@ export default function SubjectExpertDashboard({ user }: SubjectExpertDashboardP
         console.error("Failed to load subjects", err)
       }
     }
+
+  useEffect(() => {
     fetchAssignedSubjects()
   }, [user._id])
 
   const getStatusColor = (status?: string) => {
     switch (status) {
       case "Draft":
-        return "bg-gray-200 text-gray-700"
-      case "Sent to Expert":
-        return "bg-blue-100 text-blue-800"
+        return "bg-yellow-200 text-yellow-700"
       case "Rejected":
         return "bg-red-100 text-red-800"
       case "Approved":
         return "bg-green-100 text-green-800"
       case "Sent to HOD":
-        return "bg-green-100 text-green-800"
-      case "Sent Feedback":
-        return "bg-yellow-100 text-yellow-800"
+        return "bg-purple-100 text-purple-800"
       default:
         return "bg-gray-100 text-gray-800"
     }
   }
+
+  const handleSendToHOD = async (subjectId: string, file: File) => {
+  try {
+    // Upload the file first
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const uploadRes = await fetch("http://localhost:5000/api/auth/upload", {
+      method: "POST",
+      body: formData,
+    });
+
+    const { fileId } = await uploadRes.json();
+    console.log("Uploaded file ID:", fileId);
+
+
+    if (!fileId) throw new Error("File upload failed");
+
+    // Link file to subject and update status
+    const res = await fetch("http://localhost:5000/api/auth/send-to-hod", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ subjectId, fileId }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) throw new Error(data.error || "Failed to send");
+
+    // Refresh drafts or notify user
+    fetchAssignedSubjects(); // <- Your function to refresh the data
+  } catch (error) {
+    console.error("Send to HOD failed:", error);
+    alert("Failed to send to HOD: " + error);
+  }
+};
+
 
   const handleApprove = async (subjectId: string) => {
     try {
@@ -114,12 +150,6 @@ export default function SubjectExpertDashboard({ user }: SubjectExpertDashboardP
     }
   }
 
-  const getExpertStatusLabel = (status: string) => {
-    if (status === "Sent to Expert") return "Received";
-    if (status === "Rejected") return "Sent Feedback";
-    if (status == "Sent to HOD") return "Approved";
-    return status;
-  };
 
 const renderContent = () => {
     switch (activeTab) {
@@ -188,7 +218,7 @@ const renderContent = () => {
                           by {item.facultyName} • {new Date(item.lastUpdated!).toLocaleString()}
                         </p>
                       </div>
-                      <Badge className={getStatusColor(item.status)}>{getExpertStatusLabel(item.status)}</Badge>
+                      <Badge className={getStatusColor(item.status)}>{item.status}</Badge>
                     </div>
                   ))}
               </CardContent>
@@ -221,67 +251,45 @@ const renderContent = () => {
             <TableBody>
               {reviews.map((review) => (
                 <TableRow key={review._id}>
-                  <TableCell>{review.title}</TableCell>
+                  <TableCell onClick={() => setActiveTab("create-draft")}>{review.title}</TableCell>
                   <TableCell>{review.facultyName}</TableCell>
                   <TableCell>{review.lastUpdated ? new Date(review.lastUpdated).toLocaleString() : "—"}</TableCell>
                   <TableCell>
-                    <Badge className={getStatusColor(review.status)}>{getExpertStatusLabel(review.status)}</Badge>
+                    <Badge className={getStatusColor(review.status)}>{review.status}</Badge>
                   </TableCell>
                   <TableCell>
                     <div className="flex gap-2">
-                      {review.syllabusFile && (
-                        <a
-                          href={`http://localhost:5000/api/auth/file/${review.syllabusFile}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          download
-                        >
-                          <Button size="sm" variant="outline">
-                            <Download className="w-4 h-4 mr-1" />
-                            Download
-                          </Button>
-                        </a>
-                      )}
+                          <input
+                            type="file"
+                            id={`upload-hod-${review._id}`}
+                            accept=".docx,.pdf"
+                            className="hidden"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (!file) return;
+                              setReviews((prev) =>
+                                prev.map((d) =>
+                                  d._id === review._id ? { ...d, draftFile: file } : d
+                                )
+                              );
+                              // Automatically upload file to HOD after selection
+                              handleSendToHOD(review._id, file);
+                            }}
+                          />
 
-                      {review.status !== "Approved" && (
-                        <>
-                          <Button
-                            onClick={() => handleApprove(review._id)}
-                            className="bg-green-600 hover:bg-green-700"
-                          >
-                            <CheckCircle className="w-4 h-4 mr-1" /> Approve
-                          </Button>
-
-                          <Dialog>
-                            <DialogTrigger asChild>
-                              <Button variant="outline" onClick={() => setSelectedSyllabusId(review._id)}>
-                                <MessageSquare className="w-4 h-4 mr-1" /> Feedback
-                              </Button>
-                            </DialogTrigger>
-                            <DialogContent>
-                              <DialogHeader>
-                                <DialogTitle>Send Feedback - {review.title}</DialogTitle>
-                              </DialogHeader>
-                              <div className="space-y-4">
-                                <Textarea
-                                  placeholder="Write your feedback..."
-                                  value={feedback}
-                                  onChange={(e) => setFeedback(e.target.value)}
-                                  className="min-h-32"
-                                />
-                                <Button
-                                  onClick={handleSendFeedback}
-                                  className="w-full bg-purple-600 hover:bg-purple-700"
-                                >
-                                  <MessageSquare className="mr-1 h-4 w-4" />
-                                  Send Feedback
-                                </Button>
-                              </div>
-                            </DialogContent>
-                          </Dialog>
-                        </>
-                      )}
-                    </div>
+                          {review.status !== "Approved" && (
+                            <Button
+                              size="sm"
+                              className="bg-purple-600 hover:bg-purple-700"
+                              onClick={() =>
+                                document.getElementById(`upload-hod-${review._id}`)?.click()
+                              }
+                            >
+                              <Upload className="mr-1 h-3 w-3" />
+                              Send to HOD
+                            </Button>
+                          )}
+                        </div>
                   </TableCell>
                 </TableRow>
               ))}
@@ -290,6 +298,9 @@ const renderContent = () => {
         </CardContent>
       </Card>
         )
+
+      case "create-draft":
+        return <CreateSyllabus />
 
       default:
         return <div>Content for {activeTab}</div>

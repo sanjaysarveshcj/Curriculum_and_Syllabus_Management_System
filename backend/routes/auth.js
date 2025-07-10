@@ -242,14 +242,14 @@ router.put("/subject/:id/approve", async (req, res) => {
 
     // Notify faculty
     const notification = new Notification({
-      userId: subject.assignedFaculty,
+      userId: subject.assignedExpert,
       message: `Your syllabus for "${subject.title}" has been approved.`,
       timestamp: new Date(),
       read: false,
     });
     await notification.save();
 
-    req.app.get("io").to(subject.assignedFaculty).emit(`notification:${subject.assignedFaculty}`, {
+    req.app.get("io").to(subject.assignedExpert).emit(`notification:${subject.assignedExpert}`, {
       _id: notification._id,
       message: notification.message,
       timestamp: notification.timestamp,
@@ -285,29 +285,27 @@ router.get("/syllabus/:subjectId", async (req, res) => {
 });
 
 // PUT /api/auth/subject/:id/feedback
-router.put("/subject/:id/feedback", async (req, res) => {
+router.put("/subject/:id/reject", async (req, res) => {
   try {
     const { id } = req.params;
-    const { feedback } = req.body;
 
     const subject = await Subject.findById(id);
     if (!subject) return res.status(404).json({ error: "Subject not found" });
 
     subject.status = "Rejected";
     subject.lastUpdated = new Date();
-    subject.feedback = feedback;
 
     await subject.save();
 
     const notification = new Notification({
-      userId: subject.assignedFaculty,
-      message: `Your syllabus for "${subject.title}" was rejected. Feedback: ${feedback}`,
+      userId: subject.assignedExpert,
+      message: `Your syllabus for "${subject.title}" was rejected.`,
       timestamp: new Date(),
       read: false,
     });
     await notification.save();
 
-    req.app.get("io").to(subject.assignedFaculty).emit(`notification:${subject.assignedFaculty}`, {
+    req.app.get("io").to(subject.assignedExpert).emit(`notification:${subject.assignedExpert}`, {
       _id: notification._id,
       message: notification.message,
       timestamp: notification.timestamp,
@@ -571,41 +569,6 @@ router.put("/departments/:id", async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 });
-
-// router.put("/upload-curriculum", async (req, res) => {
-//   try {
-//     const { regulationCode, department, fileId } = req.body;
-
-//     console.log(req.body);
-
-//     if (!regulationCode || !department || !fileId) {
-//       return res.status(400).json({ error: "Missing regulation or department or file" });
-//     }
-
-//     // Update regulation record
-//     const updated = await Regulation.findOneAndUpdate(
-//       { regulationCode, department },
-//       {
-//         curriculumUrl: fileId,
-//         status: "Submitted",
-//         lastUpdated: new Date(),
-//       },
-//       { new: true }
-//     );
-
-//     if (!updated) {
-//       return res.status(404).json({ error: "Regulation entry not found" });
-//     }
-
-//     res.status(200).json({
-//       message: "Curriculum uploaded and regulation updated",
-//       regulation: updated, // Return the updated regulation instead of req.file.id
-//     });
-//   } catch (err) {
-//     console.error("Update error:", err);
-//     res.status(500).json({ error: "Internal server error" });
-//   }
-// });
 
 router.put("/upload-curriculum", async (req, res) => {
   try {

@@ -118,7 +118,7 @@ export default function FacultyDashboard({ user }: FacultyDashboardProps) {
       subjectId: subject._id,
       subject: subject.title,
       expertName: subject.assignedExpert.name,
-      draftFile: subject.fileUrl,
+      draftFile: subject.syllabusUrl,
       status: subject.status,
       lastUpdated: subject.updatedAt,
       feedback: subject.feedback || "",
@@ -135,24 +135,11 @@ export default function FacultyDashboard({ user }: FacultyDashboardProps) {
   const getStatusColor = (status: string) => {
     switch (status) {
       case "Approved":
-        return "bg-purple-100 text-purple-800"
-      case "Sent to Expert":
-        return "bg-blue-100 text-blue-800"
-      case "Draft":
-        return "bg-yellow-100 text-yellow-800"
-      case "Feedback Received":
-        return "bg-orange-100 text-orange-800"
-      case "Changes Requested":
-        return "bg-red-100 text-red-800"
-      case "ready-to-send":
-        return "bg-blue-100 text-blue-800"
-      case "sent-to-hod":
-        return "bg-purple-100 text-purple-800"
+        return "bg-green-100 text-green-800"
       default:
-        return "bg-gray-100 text-gray-800"
+        return "bg-red-100 text-red-800"
     }
   }
-
 
 
 const handleSendToExpert = async (subjectId: string, file: File) => {
@@ -470,7 +457,7 @@ const handleSendToHOD = async (subjectId: string, file: File) => {
                     <TableHead>Subject</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Last Updated</TableHead>
-                    <TableHead>Expert/Feedback</TableHead>
+                    <TableHead>Expert</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -480,71 +467,34 @@ const handleSendToHOD = async (subjectId: string, file: File) => {
                     //   syllabusDrafts.some((s) => s.title === draft.subject)
                     // )
                     .map((draft) => (
-                    <TableRow key={draft.id} className="hover:bg-muted" onClick={() => setActiveTab("create-final")}>
+                    <TableRow key={draft.id} className="hover:bg-muted">
                       <TableCell className="font-medium">{draft.subject}</TableCell>
                       <TableCell>
-                        <Badge className={getStatusColor(draft.status)}>{draft.status}</Badge>
+                        <Badge className={getStatusColor(draft.status)}>{draft.status !== "Approved"? "Not Approved yet" : draft.status}</Badge>
                       </TableCell>
                       <TableCell>{draft.lastUpdated}</TableCell>
                       <TableCell>
                         {draft.expertName && (
                           <div className="text-sm">
                             <p className="font-medium">{draft.expertName}</p>
-                            {draft.feedback && (
-                              <Dialog>
-                                <DialogTrigger asChild>
-                                  <Button variant="link" size="sm" className="p-0 h-auto text-purple-600">
-                                    View Feedback
-                                  </Button>
-                                </DialogTrigger>
-                                <DialogContent className="max-w-2xl">
-                                  <DialogHeader>
-                                    <DialogTitle>Feedback for {draft.subject}</DialogTitle>
-                                  </DialogHeader>
-                                  <div className="space-y-4">
-                                    <div className="bg-muted p-4 rounded-lg">
-                                      <p className="text-sm">{draft.feedback}</p>
-                                    </div>
-                                  </div>
-                                </DialogContent>
-                              </Dialog>
-                            )}
                           </div>
                         )}
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-2">
-                          <input
-                            type="file"
-                            id={`upload-${draft.subjectId}`}
-                            accept=".docx,.pdf"
-                            className="hidden"
-                            onChange={(e) => {
-                              const file = e.target.files?.[0];
-                              if (!file) return;
-                              setSyllabusDrafts((prev) =>
-                                prev.map((d) =>
-                                  d.subjectId === draft.subjectId ? { ...d, draftFile: file } : d
-                                )
-                              );
-                              // After file is selected, automatically upload
-                              handleSendToExpert(draft.subjectId, file);
-                            }}
-                          />
-
-                          {(draft.status === "Draft" || draft.status === "Rejected") && (
-                            
-                            <Button
-                              size="sm"
-                              className="bg-purple-600 hover:bg-purple-700"
-                              onClick={() =>
-                                document.getElementById(`upload-${draft.subjectId}`)?.click()
-                              }>
-                              <Send className="mr-1 h-3 w-3" />
-                              {draft.status === "Rejected" ? "Resubmit" : "Send to Expert"}
-                            </Button>
-
-                          )}
+                          {draft.status === "Approved" && draft.draftFile && (
+                              <a
+                                href={`http://localhost:5000/api/auth/file/${draft.draftFile}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                download
+                              >
+                                <Button size="sm" variant="outline">
+                                  <Download className="w-4 h-4 mr-1" />
+                                  Download
+                                </Button>
+                              </a>
+                            )}
                         </div>
 
                       </TableCell>
@@ -580,7 +530,7 @@ const handleSendToHOD = async (subjectId: string, file: File) => {
                     </div>
                     {draftFile && (
                       <div className="bg-purple-50 border border-purple-200 rounded-lg p-3">
-                        <p className="text-sm text-purple-800">✓ File selected: {draftFile.name}</p>
+                        <p className="text-sm text-purple-800">File selected: {draftFile.name}</p>
                       </div>
                     )}
                     <Button
@@ -597,84 +547,6 @@ const handleSendToHOD = async (subjectId: string, file: File) => {
           </Card>
         )
 
-      case "approved":
-        return (
-          <Card className="animate-slide-up">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Download className="h-5 w-5" />
-                Approved Syllabus
-              </CardTitle>
-              <CardDescription>Approved by expert now, create formatted version</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Subject</TableHead>
-                    <TableHead>Last Updated</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                {syllabusDrafts
-                  .filter((syllabus) => syllabus.status === "Approved" || syllabus.status === "Sent to HOD")
-                  .map((syllabus) => (
-                    <TableRow key={syllabus.id} className="hover:bg-muted">
-                      <TableCell className="font-medium">{syllabus.subject}</TableCell>
-                      <TableCell>{new Date(syllabus.lastUpdated).toLocaleDateString()}</TableCell>
-                      <TableCell>
-                        <Badge className={getStatusColor(syllabus.status)}>
-                          {syllabus.status === "Sent to HOD" ? "Sent to HOD" : "Ready to Send"}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex gap-2">
-                          <input
-                            type="file"
-                            id={`upload-hod-${syllabus.subjectId}`}
-                            accept=".docx,.pdf"
-                            className="hidden"
-                            onChange={(e) => {
-                              const file = e.target.files?.[0];
-                              if (!file) return;
-                              setSyllabusDrafts((prev) =>
-                                prev.map((d) =>
-                                  d.subjectId === syllabus.subjectId ? { ...d, draftFile: file } : d
-                                )
-                              );
-                              // Automatically upload file to HOD after selection
-                              handleSendToHOD(syllabus.subjectId, file);
-                            }}
-                          />
-
-                          {syllabus.status === "Approved" && (
-                            <Button
-                              size="sm"
-                              className="bg-purple-600 hover:bg-purple-700"
-                              onClick={() =>
-                                document.getElementById(`upload-hod-${syllabus.subjectId}`)?.click()
-                              }
-                            >
-                              <Upload className="mr-1 h-3 w-3" />
-                              Send to HOD
-                            </Button>
-                          )}
-                        </div>
-                      </TableCell>
-
-                    </TableRow>
-                  ))}
-              </TableBody>
-
-              </Table>
-            </CardContent>
-          </Card>
-        )
-
-      case "create-final":
-        return <CreateSyllabus />
 
       default:
         return <div>Content for {activeTab}</div>

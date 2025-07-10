@@ -105,17 +105,15 @@ export default function HODDashboard({ user }: HODDashboardProps) {
   const getStatusColor = (status: string) => {
     switch (status) {
       case "Approved":
-        return "bg-purple-100 text-purple-800"
-      case "Submitted":
-        return "bg-blue-100 text-blue-800"
+        return "bg-green-100 text-green-800"
       case "Draft":
         return "bg-yellow-100 text-yellow-800"
-      case "Pending Review":
-        return "bg-orange-100 text-orange-800"
-      case "Reviewed":
+      case "Sent to HOD":
         return "bg-purple-100 text-purple-800"
+      case "Rejected":
+        return "bg-red-100 text-red-800"
       default:
-        return "bg-gray-100 text-gray-800"
+        return "bg-purple-100 text-purple-800"
     }
   }
 
@@ -315,6 +313,59 @@ export default function HODDashboard({ user }: HODDashboardProps) {
       return found ? found.name : null;
     };
 
+    const handleApprove = async (subjectId: string) => {
+  try {
+    const res = await fetch(`http://localhost:5000/api/auth/subject/${subjectId}/approve`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+    });
+
+    if (!res.ok) throw new Error("Failed to approve subject");
+
+    const { subject } = await res.json();
+
+    // Update the local state with the new subject data
+    setSubjects((prevSubjects) =>
+      prevSubjects.map((subj) =>
+        subj._id === subjectId ? { ...subj, status: "Approved", lastUpdated: subject.lastUpdated } : subj
+      )
+    );
+
+    alert("Subject approved successfully");
+  } catch (err) {
+    console.error("Error approving subject:", err);
+    alert("Error approving subject");
+  }
+};
+
+
+const handleReject = async (subjectId: string) => {
+  try {
+    const res = await fetch(`http://localhost:5000/api/auth/subject/${subjectId}/reject`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+    });
+
+    if (!res.ok) throw new Error("Failed to reject subject");
+
+    const { subject } = await res.json();
+
+    // Update the local state with the new subject data
+    setSubjects((prevSubjects) =>
+      prevSubjects.map((subj) =>
+        subj._id === subjectId ? { ...subj, status: "Rejected", lastUpdated: subject.lastUpdated } : subj
+      )
+    );
+
+    alert("Subject rejected successfully");
+  } catch (err) {
+    console.error("Error rejecting subject:", err);
+    alert("Error rejecting subject");
+  }
+};
+
+
+
     const getExpertNameById = (id: string | undefined): string | null => {
       const found = expertList.find((e) => e._id === id);
       return found ? found.name : null;
@@ -392,7 +443,7 @@ export default function HODDashboard({ user }: HODDashboardProps) {
                             {item.lastUpdated ? new Date(item.lastUpdated).toLocaleString() : "Not updated"}
                           </p>
                         </div>
-                        <Badge className={getStatusColor(item.status === "Sent to HOD" ? "Reviewed" : "Pending Review")}>{item.status === "Sent to HOD" ? "Reviewed" : "Pending Review"}</Badge>
+                        <Badge className={getStatusColor(item.status === "Sent to HOD" ? "Received" : item.status)}>{item.status === "Sent to HOD" ? "Received" : item.status}</Badge>
                       </div>
                   ))}
 
@@ -792,8 +843,8 @@ export default function HODDashboard({ user }: HODDashboardProps) {
                       <TableCell className="font-medium">{subject.title}</TableCell>
                       <TableCell>{getFacultyNameById(subject.assignedFaculty) || "N/A"}</TableCell>
                     <TableCell>
-                        <Badge className={getStatusColor(subject.status === "Sent to HOD" ? "Reviewed" : "Pending Review")}>
-                          {subject.status === "Sent to HOD" ? "Reviewed" : "Pending Review"}
+                        <Badge className={getStatusColor(subject.status === "Sent to HOD" ? "Received" : subject.status)}>
+                          {subject.status === "Sent to HOD" ? "Received" : subject.status}
                         </Badge>
                       </TableCell>
 
@@ -802,21 +853,53 @@ export default function HODDashboard({ user }: HODDashboardProps) {
                           ? new Date(subject.lastUpdated).toLocaleString()
                           : "Not Updated"}
                       </TableCell>
-                      <TableCell>
-                        {subject.status === "Sent to HOD" && subject.syllabusUrl && (
-                              <a
-                                href={`http://localhost:5000/api/auth/file/${subject.syllabusUrl}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                download
-                              >
-                                <Button size="sm" variant="outline">
-                                  <Download className="w-4 h-4 mr-1" />
-                                  Download
-                                </Button>
-                              </a>
-                            )}
+                     <TableCell className="flex flex-wrap gap-2">
+                        {subject.syllabusUrl && (
+                          <a
+                            href={`http://localhost:5000/api/auth/file/${subject.syllabusUrl}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            download
+                          >
+                            <Button size="sm" variant="outline">
+                              <Download className="w-4 h-4 mr-1" />
+                              Download
+                            </Button>
+                          </a>
+                        )}
+
+                        {subject.status === "Sent to HOD" && (
+                          <>
+                            <Button
+                              size="sm"
+                              className="bg-green-600 hover:bg-green-700 text-white"
+                              onClick={() => {
+                                if (window.confirm("Are you sure you want to approve this syllabus?")) {
+                                  handleApprove(subject._id);
+                                }
+                              }}
+                            >
+                              Approve
+                            </Button>
+
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => {
+                                if (window.confirm("Are you sure you want to reject this syllabus?")) {
+                                  handleReject(subject._id);
+                                }
+                              }}
+                            >
+                              Reject
+                            </Button>
+                          </>
+                        )}
+
                       </TableCell>
+
+
+
                     </TableRow>
                   ))}
                 </TableBody>

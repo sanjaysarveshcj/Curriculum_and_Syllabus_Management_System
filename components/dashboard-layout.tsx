@@ -96,13 +96,12 @@ export default function DashboardLayout({ children, user, activeTab, onTabChange
         return [
           { id: "dashboard", title: "Dashboard", icon: Home },
           { id: "drafts", title: "Draft Syllabus", icon: UserCheck },
-          { id: "approved", title: "Approved Syllabi", icon: Upload },
-          { id: "create-final", title: "Create Final", icon: FileText },
         ]
       case "subject-expert":
         return [
           { id: "dashboard", title: "Dashboard", icon: Home },
-          { id: "review", title: "Syllabus Review", icon: FileText },
+          { id: "review", title: "Syllabus Review", icon: UserCheck },
+          { id: "create-draft", title: "Create Syllabus Draft", icon: FileText }
         ]
       default:
         return [{ id: "dashboard", title: "Dashboard", icon: Home }]

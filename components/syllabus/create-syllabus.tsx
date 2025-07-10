@@ -1353,26 +1353,6 @@ const CreateSyllabus = () => {
                     >
                       Back to Edit
                     </Button>
-                    <Button
-                      onClick={() => {
-                        setIsSubmitting(true);
-                        setTimeout(() => {
-                          toast.success('Syllabus submitted successfully!');
-                          setIsSubmitting(false);
-                        }, 1000);
-                      }}
-                      disabled={isSubmitting}
-                      className="bg-indigo-600 hover:bg-indigo-700 text-white"
-                    >
-                      {isSubmitting ? (
-                        <>
-                          <span className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></span>
-                          Submitting...
-                        </>
-                      ) : (
-                        'Submit Syllabus'
-                      )}
-                    </Button>
                   </div>
                 </div>
               )}
