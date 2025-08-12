@@ -162,10 +162,10 @@ export default function DashboardLayout({ children, user, activeTab, onTabChange
   return (
     <div className="flex min-h-screen bg-background text-foreground transition-colors duration-300">
       {/* Left Sidebar */}
-      <div className="w-20 gradient-bg flex flex-col items-center py-6 space-y-6 fixed top-0 left-0 h-screen z-50">
+      <div className="w-20 gradient-bg flex flex-col items-center pt-4 py-6 space-y-6 fixed top-0 left-0 h-screen z-50">
         {/* App Icon */}
-        <div className="w-15 h-15 rounded-xl flex items-center justify-center">
-          <img src="/images/CITBIF_logo.png" alt="Logo" />
+        <div className="mx-auto w-16 h-16 bg-white/100 rounded-full flex items-center justify-center overflow-hidden -mt-2">
+          <img src="/images/CIT_logo.jpg" alt="Logo" />
         </div>
 
         {/* Navigation Icons */}
