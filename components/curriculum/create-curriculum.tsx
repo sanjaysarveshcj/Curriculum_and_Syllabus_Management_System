@@ -207,7 +207,7 @@ const CourseInputRow: React.FC<{
   }
 };
   return (
-    <div className="flex flex-wrap items-center gap-2 py-2 bg-purple-50 rounded-lg p-3">
+    <div className="flex flex-wrap items-center gap-2 py-2 bg-purple-50 rounded-lg p-3 dark:bg-gray-800">
       <input
         type="text"
         value={course.sno}
@@ -1102,7 +1102,7 @@ const CreateCurriculum: React.FC = () => {
               />
             </div>
             <div className="space-y-2">
-              <div className="flex items-center space-x-2 font-medium text-gray-700 dark:text-gray-300 text-sm">
+              <div className="flex items-center space-x-2 font-medium text-gray-700 dark:text-gray-500 text-sm">
                 <span className="w-12 text-center">S.No.</span>
                 <span className="flex-1">Course Title</span>
                 <span className="w-12 text-center">Sem</span>
@@ -1216,7 +1216,7 @@ const CreateCurriculum: React.FC = () => {
         <div className="p-6">
           <div className="flex overflow-auto space-x-6">
             {formFields.professionalElectives.map((col, colIndex) => (
-              <div key={colIndex} className="min-w-[250px] bg-white shadow-md p-4 rounded-md border border-purple-200">
+              <div key={colIndex} className="min-w-[250px] bg-white shadow-md p-4 rounded-md border border-purple-200 dark:bg-gray-800 dark:border-gray-600">
                 <div className="flex items-center justify-between mb-2">
                   <div className="space-y-2">
                     <input
@@ -1234,10 +1234,10 @@ const CreateCurriculum: React.FC = () => {
                     />
                   </div>
                   <button
-                    className="ml-2 text-red-600 dark:text-red-400 text-xs"
+                    className="ml-2 p-2 text-sm bg-red-600 text-white rounded-md hover:bg-red-700 dark:hover:bg-red-800"
                     onClick={() => removeElectiveColumn(colIndex)}
                   >
-                    Remove
+                    Remove Vertical
                   </button>
                 </div>
                 {col.cells.map((cell, rowIndex) => (

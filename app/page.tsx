@@ -7,13 +7,14 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useRouter } from "next/navigation"
-import { GraduationCap, Mail, Lock, UserCircle } from "lucide-react"
+import { GraduationCap, Mail, Lock, UserCircle, Loader2 } from "lucide-react"
 
 export default function LoginPage() {
   const [showSplash, setShowSplash] = useState(true)
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [role, setRole] = useState("")
+  const [loading, setLoading] = useState(false)
   const router = useRouter()
 
   useEffect(() => {
@@ -23,6 +24,7 @@ export default function LoginPage() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
+    setLoading(true)
 
     try {
       const res = await fetch("http://localhost:5000/api/auth/login", {
@@ -46,10 +48,11 @@ export default function LoginPage() {
     } catch (err) {
       console.error(err)
       alert("An error occurred during login")
+    } finally {
+      setLoading(false)
     }
   }
 
-  // Splash Screen JSX
   if (showSplash) {
     return (
       <div className="flex items-center justify-center h-screen bg-purple-700 text-white animate-fade-in">
@@ -61,7 +64,6 @@ export default function LoginPage() {
     )
   }
 
-  // Main Login Page JSX
   return (
     <div className="min-h-screen gradient-bg flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-[url('/placeholder.svg?height=1080&width=1920')] opacity-5"></div>
@@ -125,8 +127,20 @@ export default function LoginPage() {
                 </SelectContent>
               </Select>
             </div>
-            <Button type="submit" className="w-full bg-white text-purple-600 hover:bg-white/90 font-semibold py-3">
-              Sign In
+
+            <Button
+              type="submit"
+              className="w-full bg-white text-purple-600 hover:bg-white/90 font-semibold py-3 flex items-center justify-center gap-2"
+              disabled={loading} 
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  Logging in...
+                </>
+              ) : (
+                "Sign In"
+              )}
             </Button>
           </form>
         </CardContent>
@@ -134,4 +148,3 @@ export default function LoginPage() {
     </div>
   )
 }
-
