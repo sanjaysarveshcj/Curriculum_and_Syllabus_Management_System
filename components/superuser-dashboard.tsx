@@ -146,6 +146,7 @@ export default function AdminDashboard({ user }: AdminDashboardProps) {
 
   const [editDeptName, setEditDeptName] = useState("");
   const [editDeptHOD, setEditDeptHOD] = useState("");
+    const [showEditDialogId, setShowEditDialogId] = useState<string | null>(null);
 
 
   const [activeTab, setActiveTab] = useState("dashboard")
@@ -186,30 +187,28 @@ export default function AdminDashboard({ user }: AdminDashboardProps) {
   }, []);
 
   const handleUpdateDepartment = async (deptId: string) => {
-  try {
-    const res = await fetch(`http://localhost:5000/api/auth/departments/${deptId}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        name: editDeptName,
-        hod: editDeptHOD,
-      }),
-    });
-
-    if (!res.ok) throw new Error("Update failed");
-
-    toast.success("Department updated");
-    // Refetch departments after update
-    fetchDepartments();
-  } catch (err) {
-    console.error("Update error", err);
-    toast.error("Failed to update department");
-  }
-};
-
-
+    setShowEditDialogId(null); // Close dialog immediately
+    try {
+      const res = await fetch(`http://localhost:5000/api/auth/departments/${deptId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          name: editDeptName,
+          hod: editDeptHOD
+        })
+      });
+      if (!res.ok) {
+        throw new Error("Update failed");
+      }
+      toast.success("Department updated");
+      fetchDepartments();
+    } catch (err) {
+      console.error("Update error", err);
+      toast.error("Failed to update department");
+    }
+  };
 
   const handleCreateRegulation = async () => {
   if (!newRegulationCode.trim()) {
@@ -561,51 +560,54 @@ export default function AdminDashboard({ user }: AdminDashboardProps) {
                       <TableCell className="font-medium">{dept.name}</TableCell>
                       <TableCell>{dept.hodName}</TableCell>
                       <TableCell>
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="text-purple-600 border-purple-600"
-                              onClick={() => {
-                                setEditDeptName(dept.name);
-                                setEditDeptHOD(dept.hodName);
-                              }}
-                            >
-                              Edit
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent>
-                            <DialogHeader>
-                              <DialogTitle>Edit Department</DialogTitle>
-                            </DialogHeader>
-                            <div className="space-y-4">
-                              <Input
-                                value={editDeptName}
-                                onChange={(e) => setEditDeptName(e.target.value)}
-                                placeholder="Department Name"
-                              />
-                              <Select value={editDeptHOD} onValueChange={setEditDeptHOD}>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Select HOD" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {allHods.map((hod) => (
-                                    <SelectItem key={hod._id} value={hod._id}>
-                                      {hod.name}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
+                          <Dialog open={showEditDialogId === dept._id} onOpenChange={(open) => {
+                            if (!open) setShowEditDialogId(null);
+                          }}>
+                            <DialogTrigger asChild>
                               <Button
-                                onClick={() => handleUpdateDepartment(dept._id)}
-                                className="bg-purple-600 text-white w-full"
+                                variant="outline"
+                                size="sm"
+                                className="text-purple-600 border-purple-600"
+                                onClick={() => {
+                                  setEditDeptName(dept.name);
+                                  setEditDeptHOD(dept.hodName);
+                                  setShowEditDialogId(dept._id);
+                                }}
                               >
-                                Save Changes
+                                Edit
                               </Button>
-                            </div>
-                          </DialogContent>
-                        </Dialog>
+                            </DialogTrigger>
+                            <DialogContent>
+                              <DialogHeader>
+                                <DialogTitle>Edit Department</DialogTitle>
+                              </DialogHeader>
+                              <div className="space-y-4">
+                                <Input
+                                  value={editDeptName}
+                                  onChange={(e) => setEditDeptName(e.target.value)}
+                                  placeholder="Department Name"
+                                />
+                                <Select value={editDeptHOD} onValueChange={setEditDeptHOD}>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select HOD" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {allHods.map((hod) => (
+                                      <SelectItem key={hod._id} value={hod._id}>
+                                        {hod.name}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                                <Button
+                                  onClick={() => handleUpdateDepartment(dept._id)}
+                                  className="bg-purple-600 text-white w-full"
+                                >
+                                  Save Changes
+                                </Button>
+                              </div>
+                            </DialogContent>
+                          </Dialog>
                       </TableCell>
                     </TableRow>
                   ))}
