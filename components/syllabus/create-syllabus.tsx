@@ -251,22 +251,32 @@ const CreateSyllabus = () => {
         SNO: `${i + 1}.`,
         REFERENCE: ref,
       })),
-      YT_RESOURCES: formFields.ytResources.map((yr, i) => ({
-        SNO: `${i + 1}.`,
-        YT_RESOURCE: yr,
-      })),
-      WEB_RESOURCES: formFields.webResources.map((wr, i) => ({
-        SNO: `${i + 1}.`,
-        WEB_RESOURCE: wr,
-      })),
-      LIST_OF_SOFTWARES: formFields.listOfSoftwares.map((ls, i) => ({
-        SNO: `${i + 1}.`,
-        LIST_OF_SOFTWARE: ls,
-      })),
-      E_BOOK: formFields.eBook.map((eb, i) => ({
-        SNO: `${i + 1}.`,
-        BOOK: eb,
-      })),
+      // ✅ Conditional sections: Only include if there are items to display
+      // This prevents empty headings from appearing in the document
+      YT_RESOURCES: formFields.ytResources.length > 0 ? {
+        items: formFields.ytResources.map((yr, i) => ({
+          SNO: `${i + 1}.`,
+          YT_RESOURCE: yr,
+        }))
+      } : null,
+      WEB_RESOURCES: formFields.webResources.length > 0 ? {
+        items: formFields.webResources.map((wr, i) => ({
+          SNO: `${i + 1}.`,
+          WEB_RESOURCE: wr,
+        }))
+      } : null,
+      LIST_OF_SOFTWARES: formFields.listOfSoftwares.length > 0 ? {
+        items: formFields.listOfSoftwares.map((ls, i) => ({
+          SNO: `${i + 1}.`,
+          LIST_OF_SOFTWARE: ls,
+        }))
+      } : null,
+      E_BOOK: formFields.eBook.length > 0 ? {
+        items: formFields.eBook.map((eb, i) => ({
+          SNO: `${i + 1}.`,
+          BOOK: eb,
+        }))
+      } : null,
       L: formFields.L,
       T: formFields.T,
       P: formFields.P,
