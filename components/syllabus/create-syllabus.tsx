@@ -592,9 +592,10 @@ const CreateSyllabus = () => {
                                   id="title"
                                   type="text"
                                   value={title}
-                                  onChange={(e) => setTitle(e.target.value)}
+                                  onChange={(e) => setTitle(e.target.value.toUpperCase())}
                                   className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                                   placeholder="Enter syllabus title"
+                                  style={{ textTransform: 'uppercase' }}
                                 />
                               </div>
                               <div>
