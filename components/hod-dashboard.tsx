@@ -372,7 +372,7 @@ const handleReject = async (subjectId: string) => {
     };      
 
     const totalSubjects = subjects.length;
-    const completedSubjects = subjects.filter((s) => s.status === "Sent to HOD").length;
+    const completedSubjects = subjects.filter((s) => s.status === "Approved").length;
 
     const completionRate = totalSubjects > 0 
       ? Math.round((completedSubjects / totalSubjects) * 100) 
@@ -402,7 +402,7 @@ const handleReject = async (subjectId: string) => {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">
-                    {subjects.filter((item) => item.status !== "Sent to HOD").length}
+                    {subjects.filter((item) => item.status !== "Approved" && item.status!=="Sent to HOD").length}
                   </div>
                   <p className="text-xs text-muted-foreground">Awaiting submission</p>
                 </CardContent>
@@ -849,7 +849,7 @@ const handleReject = async (subjectId: string) => {
                       </TableCell>
 
                       <TableCell>
-                        {subject.lastUpdated && subject.status === "Sent to HOD"
+                        {subject.lastUpdated
                           ? new Date(subject.lastUpdated).toLocaleString()
                           : "Not Updated"}
                       </TableCell>
