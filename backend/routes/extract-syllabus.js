@@ -57,7 +57,8 @@ rules:
 7)while passing as json structure every field properly if they are unstructure except for unit contents.
 8)dont map coding exercise to practical exercises.
 9)for the unit contents take everything under them until next header comes , it may also as coding exercises,assignments so map them as unit content.onlymap the content under the unit's content .
-
+10)if total periods is not present, pass it as theory periods + practical periods.
+11) in course outcomes if CO[x] then map it to that field until next CO[x] comes or the next section header comes.
 TEXT:
 ${rawText}
 `;
