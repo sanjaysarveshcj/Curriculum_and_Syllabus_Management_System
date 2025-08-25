@@ -228,13 +228,22 @@ const CreateSyllabus = () => {
 
     setIsGenerating(true);
 
+    // Helper function to filter out empty entries
+    const filterEmptyEntries = (arr: string[]) => arr.filter(item => item.trim() !== '');
+
     const data: Record<string, any> = {
       COURSE_TITLE: title,
       COURSE_CODE: subject,
-      OBJECTIVES: formFields.objectives.map((obj, i) => ({
-        SNO: `${i + 1}.`,
-        OBJECTIVE: obj,
-      })),
+      // ✅ Filter out empty objectives
+      OBJECTIVES: (() => {
+        const filteredObjectives = filterEmptyEntries(formFields.objectives);
+        return filteredObjectives.length > 0 ? {
+          items: filteredObjectives.map((obj, i) => ({
+            SNO: `${i + 1}.`,
+            OBJECTIVE: obj,
+          }))
+        } : null;
+      })(),
       COURSE_DESCRIPTION: formFields.courseDescription,
       PREREQUISITES: formFields.prerequisites,
       THEORY_PERIODS: formFields.theoryPeriods,
@@ -243,40 +252,64 @@ const CreateSyllabus = () => {
       TOTAL_PERIODS: formFields.totalPeriods,
       COURSE_FORMAT: formFields.courseFormat,
       ASSESSMENTS: formFields.assessments,
-      TEXTBOOKS: formFields.textBooks.map((tb, i) => ({
-        SNO: `${i + 1}.`,
-        TEXTBOOK: tb,
-      })),
-      REFERENCES: formFields.references.map((ref, i) => ({
-        SNO: `${i + 1}.`,
-        REFERENCE: ref,
-      })),
       // ✅ Conditional sections: Only include if there are items to display
       // This prevents empty headings from appearing in the document
-      YT_RESOURCES: formFields.ytResources.length > 0 ? {
-        items: formFields.ytResources.map((yr, i) => ({
-          SNO: `${i + 1}.`,
-          YT_RESOURCE: yr,
-        }))
-      } : null,
-      WEB_RESOURCES: formFields.webResources.length > 0 ? {
-        items: formFields.webResources.map((wr, i) => ({
-          SNO: `${i + 1}.`,
-          WEB_RESOURCE: wr,
-        }))
-      } : null,
-      LIST_OF_SOFTWARES: formFields.listOfSoftwares.length > 0 ? {
-        items: formFields.listOfSoftwares.map((ls, i) => ({
-          SNO: `${i + 1}.`,
-          LIST_OF_SOFTWARE: ls,
-        }))
-      } : null,
-      E_BOOK: formFields.eBook.length > 0 ? {
-        items: formFields.eBook.map((eb, i) => ({
-          SNO: `${i + 1}.`,
-          BOOK: eb,
-        }))
-      } : null,
+      TEXTBOOKS: (() => {
+        const filteredTextBooks = filterEmptyEntries(formFields.textBooks);
+        return filteredTextBooks.length > 0 ? {
+          items: filteredTextBooks.map((tb, i) => ({
+            SNO: `${i + 1}.`,
+            TEXTBOOK: tb,
+          }))
+        } : null;
+      })(),
+      REFERENCES: (() => {
+        const filteredReferences = filterEmptyEntries(formFields.references);
+        return filteredReferences.length > 0 ? {
+          items: filteredReferences.map((ref, i) => ({
+            SNO: `${i + 1}.`,
+            REFERENCE: ref,
+          }))
+        } : null;
+      })(),
+      // ✅ Conditional sections: Only include if there are items to display
+      // This prevents empty headings from appearing in the document
+      YT_RESOURCES: (() => {
+        const filteredYtResources = filterEmptyEntries(formFields.ytResources);
+        return filteredYtResources.length > 0 ? {
+          items: filteredYtResources.map((yr, i) => ({
+            SNO: `${i + 1}.`,
+            YT_RESOURCE: yr,
+          }))
+        } : null;
+      })(),
+      WEB_RESOURCES: (() => {
+        const filteredWebResources = filterEmptyEntries(formFields.webResources);
+        return filteredWebResources.length > 0 ? {
+          items: filteredWebResources.map((wr, i) => ({
+            SNO: `${i + 1}.`,
+            WEB_RESOURCE: wr,
+          }))
+        } : null;
+      })(),
+      LIST_OF_SOFTWARES: (() => {
+        const filteredSoftwares = filterEmptyEntries(formFields.listOfSoftwares);
+        return filteredSoftwares.length > 0 ? {
+          items: filteredSoftwares.map((ls, i) => ({
+            SNO: `${i + 1}.`,
+            LIST_OF_SOFTWARE: ls,
+          }))
+        } : null;
+      })(),
+      E_BOOK: (() => {
+        const filteredEBooks = filterEmptyEntries(formFields.eBook);
+        return filteredEBooks.length > 0 ? {
+          items: filteredEBooks.map((eb, i) => ({
+            SNO: `${i + 1}.`,
+            BOOK: eb,
+          }))
+        } : null;
+      })(),
       L: formFields.L,
       T: formFields.T,
       P: formFields.P,
@@ -592,10 +625,9 @@ const CreateSyllabus = () => {
                                   id="title"
                                   type="text"
                                   value={title}
-                                  onChange={(e) => setTitle(e.target.value.toUpperCase())}
+                                  onChange={(e) => setTitle(e.target.value)}
                                   className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                                   placeholder="Enter syllabus title"
-                                  style={{ textTransform: 'uppercase' }}
                                 />
                               </div>
                               <div>

@@ -58,6 +58,8 @@ rules:
 8)dont map coding exercise to practical exercises.
 9)for the unit contents take everything under them until next header comes , it may also as coding exercises,assignments so map them as unit content.onlymap the content under the unit's content .
 10)if total periods is not present, pass it as theory periods + practical periods.
+11) in practical exercises if the content is not structured, structure it as per the guidelines.add numberings to it even if it as subheadings give number as per that.
+12) in course outcomes if CO[x] then map it to that field until next CO[x] comes or the next section header comes similarly do for all fields which contains multiple points like objectives, outcomes, text books, references, web resources, list of softwares, e-book.
 TEXT:
 ${rawText}
 `;
